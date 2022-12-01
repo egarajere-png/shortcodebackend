@@ -31,4 +31,17 @@ public class ShortCodeService {
 		emailer.send(from, emailAddress.toLowerCase(), "", subject, body, "/tmp/" + shortCode.getShortCode() + ".pdf");
 		log.info("\n\nReceipt has been sent on email");
 	}
+	
+	public boolean validateRequest(ShortCode shortCode) {
+		if(shortCode.getAccountName() != null
+				|| shortCode.getAccountName() == null
+				|| shortCode.getAccountNumber() == null
+				|| shortCode.getIdNumber() == null
+				|| shortCode.getInitiator() == null
+				|| shortCode.getCustId() == null) {
+			return false;
+		} else {
+			return true;
+		}
+	}
 }

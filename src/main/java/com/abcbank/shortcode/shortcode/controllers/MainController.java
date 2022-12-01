@@ -9,27 +9,36 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.annotation.security.RolesAllowed;
+
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.abcbank.shortcode.shortcode.entities.DTOAccount;
 import com.abcbank.shortcode.shortcode.entities.DTOApproval;
+import com.abcbank.shortcode.shortcode.entities.DTOAuthPayload;
+import com.abcbank.shortcode.shortcode.entities.DTOAuthPayloadResponse;
 import com.abcbank.shortcode.shortcode.entities.DTOResponse;
 import com.abcbank.shortcode.shortcode.entities.ShortCode;
 import com.abcbank.shortcode.shortcode.middleware.ShortCodeService;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
-import com.abcbank.shortcode.shortcode.utils.Emailer;
 import com.abcbank.shortcode.shortcode.utils.HTTPSClient;
 import com.abcbank.shortcode.shortcode.utils.SlipGenerator;
 
@@ -39,18 +48,42 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 public class MainController {
 
+	@Value("${keycloak.config.token-url}")
+    String KEYCLOAK_URL;
+	
 	@Autowired
 	ShortCodeRepo shortCodeRepo;
 	
 	@Autowired
 	ShortCodeService shortCodeService;
 
-	public static void main(String[] args) {
-		//System.out.println(new MainController().initiate("001190001000062"));
-		System.out.println(new MainController().getAccount(350001));
-	}
+	@PostMapping("/shortcodes/api/get-token")
+    public DTOAuthPayloadResponse authenticateUser(@RequestBody DTOAuthPayload authPayload) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.add("client_id", authPayload.getClientId());
+        map.add("username", authPayload.getUserName());
+        map.add("password", authPayload.getPassword());
+        map.add("grant_type", authPayload.getGrantType());
 
+        HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(map, headers);
+        try {
+            return new RestTemplate().exchange(KEYCLOAK_URL,
+                    HttpMethod.POST,
+                    entity,
+                    DTOAuthPayloadResponse.class
+            ).getBody();
+        } catch (Exception exception) {
+            log.info(exception.getLocalizedMessage());
+            String responseError = exception.getLocalizedMessage().replace("400 Bad Request: ", "");
+            log.error(responseError);
+            return new DTOAuthPayloadResponse();
+        }
+    }
+	
 	@GetMapping("/shortcodes/api/validate/{accountNumber}")
+	@RolesAllowed({"apicaller","maker","checker"})
 	public DTOAccount validate(@PathVariable String accountNumber) {
 		String url = "http://172.14.0.136:8081/account/" + accountNumber;
 		String response = HTTPSClient.sendHttpsRequest(url, "", "get", new HashMap<>(), "text");
@@ -72,14 +105,26 @@ public class MainController {
 	 * @return
 	 */
 	@PostMapping("/shortcodes/api/initiate")
+	@RolesAllowed({"apicaller","maker"})
 	@ResponseBody
 	public DTOResponse initiate(@RequestBody ShortCode request) {
-		request.setDateInitiated(LocalDateTime.now());
-		ShortCode shortCode = shortCodeRepo.findByAccountNumber(request.getAccountNumber());
-		if(shortCode == null)
-			shortCode = shortCodeRepo.save(request);
-
 		DTOResponse response = new DTOResponse();
+		if(shortCodeService.validateRequest(request) == false) {
+			response.setStatusCode("104");
+			response.setMessage("Some details are missing in the request");
+			return response;
+		}
+		
+		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberAndApproved(request.getAccountNumber(), false);
+		
+		if(shortCodeList.size() > 0) {
+			response.setStatusCode("101");
+			response.setMessage("There is a short code request for this account pending approval");
+			return response;
+		}
+		request.setDateInitiated(LocalDateTime.now());
+		ShortCode shortCode = shortCodeRepo.save(request);
+
 		if(shortCode.getId() > 0) {
 			response.setStatusCode("000");
 			response.setMessage("Short code request initiated successfully");
@@ -97,11 +142,26 @@ public class MainController {
 		return shortCodeList;
 	}
 
+	
+	@GetMapping("/shortcodes/api/get-shortcodes/{accountNumber}")
+	@ResponseBody
+	public List<ShortCode> getPending(@PathVariable String accountNumber) {
+		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
+		return shortCodeList;
+	}
+
 	@PostMapping("/shortcodes/api/approve")
+	@RolesAllowed({"apicaller","checker"})
 	@ResponseBody
 	public ShortCode approve(@RequestBody DTOApproval request) {
-		ShortCode shortCode = shortCodeRepo.findByAccountNumber(request.getAccountNumber());
-		if(shortCode != null) {
+		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(request.getAccountNumber());
+		log.info(shortCodeList + "");
+		int count = shortCodeList.size();
+		ShortCode shortCode = new ShortCode();
+		if(count > 0) {
+			shortCode = shortCodeList.get(0);
+			log.info(shortCode + "");
+			shortCode.setSequenceNumber(count);
 			shortCode.setApprover(request.getApprover());
 			String shortCodeValue = "35" + String.format("%04d", shortCode.getId());
 			shortCode.setShortCode(Integer.parseInt(shortCodeValue));
@@ -112,9 +172,7 @@ public class MainController {
 			String filePath = generateSlip(shortCode.getShortCode());
 			log.info("File path: " + filePath);
 			shortCodeService.sendReceiptEmail(shortCode);
-		} else {
-			shortCode = new ShortCode();
-		}
+		} 
 		return shortCode;
 	}
 
@@ -174,6 +232,7 @@ public class MainController {
 				data.put("accountNumber", shortCodeObj.getAccountNumber());
 				data.put("accountName", shortCodeObj.getAccountName());
 				data.put("shortCode", shortCodeObj.getShortCode());
+				data.put("sequenceNumber", shortCodeObj.getSequenceNumber());
 				SlipGenerator.generateShortCodeSlip(data);
 			} else {
 				log.info("File already exists");

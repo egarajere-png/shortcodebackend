@@ -26,6 +26,7 @@ public class ShortCode {
 	private String idNumber;
 	private String custId;
 	private int shortCode;
+	private int sequenceNumber;
 	private LocalDateTime dateInitiated;
 	private LocalDateTime dateApproved;
 	private boolean approved = false;

@@ -55,6 +55,7 @@ public class SlipGenerator {
 		shortCodeData.put("accountNumber", "001190001000062");
 		shortCodeData.put("accountName", "Samuel Waithaka");
 		shortCodeData.put("shortCode", "350001");
+		shortCodeData.put("sequenceNumber", "1");
 		generateShortCodeSlip(shortCodeData);
 	}
     
@@ -134,6 +135,8 @@ public class SlipGenerator {
         table.addCell(new Paragraph("111777", smallBold));
         table.addCell(new Paragraph("Account", small));
         table.addCell(new Paragraph(shortCodeData.get("shortCode").toString(), smallBold));
+        table.addCell(new Paragraph("Short code sequency number", small));
+        table.addCell(new Paragraph(shortCodeData.get("sequenceNumber").toString(), smallBold));
         document.add(preface);
         document.add(table);
     }
