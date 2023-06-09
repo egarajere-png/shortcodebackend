@@ -25,6 +25,7 @@ public class ShortCode {
 	private String emailAddress;
 	private String idNumber;
 	private String custId;
+	private String remark;
 	private int shortCode;
 	private int sequenceNumber;
 	private LocalDateTime dateInitiated;

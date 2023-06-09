@@ -26,15 +26,15 @@ public class ShortCodeService {
 		String from = "ABC Bank Support<talk2us@abcthebank.com>";
 		String subject = "ABC Bank - New Short-code " + shortCode.getShortCode();
 		String body = "Dear " + customerName + ",\n\n" + 
-					"You Your Mpesa short-code, " + shortCode.getShortCode() + " has been generated has been successfully received, kindly download the attached receipt for your record." +
+					"Your ABC Bank-Mpesa short-code, " + shortCode.getShortCode() + " has been generated, kindly download the attached slip for your record." +
+					"\nYou can share it so others can send you money with this short-code as the account for Mpesa paybill." +
 					"\n\nABC Bank Team";
 		emailer.send(from, emailAddress.toLowerCase(), "", subject, body, "/tmp/" + shortCode.getShortCode() + ".pdf");
 		log.info("\n\nReceipt has been sent on email");
 	}
 	
 	public boolean validateRequest(ShortCode shortCode) {
-		if(shortCode.getAccountName() != null
-				|| shortCode.getAccountName() == null
+		if(shortCode.getAccountName() == null
 				|| shortCode.getAccountNumber() == null
 				|| shortCode.getIdNumber() == null
 				|| shortCode.getInitiator() == null
