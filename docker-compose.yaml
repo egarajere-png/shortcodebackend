@@ -1,6 +1,6 @@
 version: "3.9"
 services:
-  encryptor:
+  shortcode:
     container_name: shortcodes
     restart: always
     build: .
