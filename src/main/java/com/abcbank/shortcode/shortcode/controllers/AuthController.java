@@ -26,6 +26,8 @@ public class AuthController {
 
 	@Value("${keycloak.config.token-url}")
     String KEYCLOAK_URL;
+	@Value("${keycloak.config.client-id}")
+	private String kcClientId;
 	
 	@Autowired
 	ShortCodeRepo shortCodeRepo;
@@ -38,11 +40,11 @@ public class AuthController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("client_id", authPayload.getClientId());
-        map.add("username", authPayload.getUserName());
+        map.add("client_id", kcClientId);
+        map.add("username", authPayload.getUsername());
         map.add("password", authPayload.getPassword());
-        map.add("grant_type", authPayload.getGrantType());
-
+        map.add("grant_type", "password");
+        log.info("\n\n ============= : {}" + map);
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(map, headers);
         try {
             return new RestTemplate().exchange(KEYCLOAK_URL,

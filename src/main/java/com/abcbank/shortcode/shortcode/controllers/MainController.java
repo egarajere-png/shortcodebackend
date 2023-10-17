@@ -49,7 +49,7 @@ public class MainController {
 	@GetMapping("/shortcodes/api/validate/{accountNumber}")
 	@RolesAllowed({"apicaller","maker","checker"})
 	public DTOAccount validate(@PathVariable String accountNumber) {
-		String url = "http://172.14.0.136:8081/account/" + accountNumber;
+		String url = "http://localhost:8081/account/" + accountNumber;
 		String response = HTTPSClient.sendHttpsRequest(url, "", "get", new HashMap<>(), "text");
 		JSONObject json = new JSONObject(response);
 		DTOAccount account = new DTOAccount();
