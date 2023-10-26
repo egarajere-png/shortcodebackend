@@ -6,5 +6,5 @@ WORKDIR /app
 
 COPY target/shortcode-0.0.1-SNAPSHOT.jar ./
 
-EXPOSE 8082
+EXPOSE 8087
 ENTRYPOINT ["java", "-jar", "./shortcode-0.0.1-SNAPSHOT.jar"]
