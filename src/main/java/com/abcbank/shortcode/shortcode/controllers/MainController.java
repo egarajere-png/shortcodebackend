@@ -13,6 +13,7 @@ import javax.annotation.security.RolesAllowed;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -39,6 +40,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 public class MainController {
+
+	@Value("${service.params.finquery.host}")
+	private String finqueryHost;
 	
 	@Autowired
 	ShortCodeRepo shortCodeRepo;
@@ -49,7 +53,7 @@ public class MainController {
 	@GetMapping("/shortcodes/api/validate/{accountNumber}")
 	@RolesAllowed({"apicaller","maker","checker"})
 	public DTOAccount validate(@PathVariable String accountNumber) {
-		String url = "http://localhost:8081/account/" + accountNumber;
+		String url = "http://" + finqueryHost + "/account/" + accountNumber;
 		String response = HTTPSClient.sendHttpsRequest(url, "", "get", new HashMap<>(), "text");
 		JSONObject json = new JSONObject(response);
 		DTOAccount account = new DTOAccount();
