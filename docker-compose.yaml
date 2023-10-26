@@ -2,13 +2,14 @@ version: "3.9"
 services:
   shortcode:
     container_name: shortcodes
+    network_mode: host
     restart: always
     build: .
-    ports:
-      - "8082:8082"
+    #ports:
+    #  - "8082:8082"
     volumes:
       - /var/aes:/aes
       - /var/logs:/logs
-networks:
-  spring-cloud-network:
-    driver: shortcodes
+#networks:
+#  spring-cloud-network:
+#    driver: shortcodes
