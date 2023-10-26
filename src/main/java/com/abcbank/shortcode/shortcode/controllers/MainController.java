@@ -1,10 +1,5 @@
 package com.abcbank.shortcode.shortcode.controllers;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -14,15 +9,11 @@ import javax.annotation.security.RolesAllowed;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,12 +24,12 @@ import com.abcbank.shortcode.shortcode.entities.ShortCode;
 import com.abcbank.shortcode.shortcode.middleware.ShortCodeService;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
 import com.abcbank.shortcode.shortcode.utils.HTTPSClient;
-import com.abcbank.shortcode.shortcode.utils.SlipGenerator;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
+@RequestMapping("/shortcodes/api")
 public class MainController {
 
 	@Value("${service.params.finquery.host}")
@@ -50,7 +41,7 @@ public class MainController {
 	@Autowired
 	ShortCodeService shortCodeService;
 	
-	@GetMapping("/shortcodes/api/validate/{accountNumber}")
+	@GetMapping("/validate/{accountNumber}")
 	@RolesAllowed({"apicaller","maker","checker"})
 	public DTOAccount validate(@PathVariable String accountNumber) {
 		String url = "http://" + finqueryHost + "/account/" + accountNumber;
@@ -72,7 +63,7 @@ public class MainController {
 	 * @param request 
 	 * @return
 	 */
-	@PostMapping("/shortcodes/api/initiate")
+	@PostMapping("/initiate")
 	@RolesAllowed({"apicaller","maker"})
 	@ResponseBody
 	public DTOResponse initiate(@RequestBody ShortCode request) {
@@ -104,7 +95,7 @@ public class MainController {
 		return response;
 	}
 
-	@GetMapping("/shortcodes/api/pending")
+	@GetMapping("/pending")
 	@ResponseBody
 	public List<ShortCode> getPending() {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(false);
@@ -112,14 +103,14 @@ public class MainController {
 	}
 
 	
-	@GetMapping("/shortcodes/api/get-shortcodes/{accountNumber}")
+	@GetMapping("/get-shortcodes/{accountNumber}")
 	@ResponseBody
 	public List<ShortCode> getPending(@PathVariable String accountNumber) {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
 		return shortCodeList;
 	}
 
-	@PostMapping("/shortcodes/api/approve")
+	@PostMapping("/approve")
 	@RolesAllowed({"apicaller","checker"})
 	@ResponseBody
 	public ShortCode approve(@RequestBody DTOApproval request) {
@@ -138,40 +129,14 @@ public class MainController {
 			shortCode.setApproved(true);
 			shortCode = shortCodeRepo.save(shortCode);
 			
-			String filePath = generateSlip(shortCode.getShortCode());
+			String filePath = new UtilController().generateSlip(shortCode.getShortCode());
 			log.info("File path: " + filePath);
 			shortCodeService.sendReceiptEmail(shortCode);
 		} 
 		return shortCode;
 	}
 
-	@GetMapping("/shortcodes/print/{shortCode}")
-	public ResponseEntity<Resource> downloadSlip(@PathVariable int shortCode) throws IOException {
-		try {
-			String fileName = shortCode + ".pdf";
-			String filePath = generateSlip(shortCode);
-			File file = new File(filePath);
-
-			HttpHeaders header = new HttpHeaders();
-			header.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
-			header.add("Cache-Control", "no-cache, no-store, must-revalidate");
-			header.add("Pragma", "no-cache");
-			header.add("Expires", "0");
-
-			Path path = Paths.get(file.getAbsolutePath());
-			ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(path));
-
-			return ResponseEntity.ok()
-					.headers(header)
-					.contentLength(file.length())
-					.contentType(MediaType.APPLICATION_OCTET_STREAM)
-					.body(resource);
-		} catch(Exception e) {
-			return null;
-		}
-	}
-
-	@GetMapping("/shortcodes/api/get-account/{shortCode}")
+	@GetMapping("/get-account/{shortCode}")
 	public String getAccount(@PathVariable int shortCode) {
 		try {
 			return shortCodeRepo.findByShortCode(shortCode).getAccountNumber();
@@ -180,35 +145,12 @@ public class MainController {
 		}
 	}
 	
-	@GetMapping("/shortcodes/api/get-account-details/{shortCode}")
+	@GetMapping("/get-account-details/{shortCode}")
 	public ShortCode getAccountDetails(@PathVariable int shortCode) {
 		try {
 			return shortCodeRepo.findByShortCode(shortCode);
 		} catch(Exception e) {
 			return new ShortCode();
-		}
-	}
-
-	public String generateSlip(int shortCode) {
-		try {
-			String fileName = shortCode + ".pdf";
-			String filePath = "/tmp/" + fileName;
-			File file = new File(filePath);
-			if(!file.exists()) {
-				log.info("File does not exist, it has to be generated");
-				ShortCode shortCodeObj = shortCodeRepo.findByShortCode(shortCode);
-				HashMap<String, Object> data = new HashMap<String, Object>();
-				data.put("accountNumber", shortCodeObj.getAccountNumber());
-				data.put("accountName", shortCodeObj.getAccountName());
-				data.put("shortCode", shortCodeObj.getShortCode());
-				data.put("sequenceNumber", shortCodeObj.getSequenceNumber());
-				SlipGenerator.generateShortCodeSlip(data);
-			} else {
-				log.info("File already exists");
-			}
-			return filePath;
-		} catch(Exception e) {
-			return null;
 		}
 	}
 }
