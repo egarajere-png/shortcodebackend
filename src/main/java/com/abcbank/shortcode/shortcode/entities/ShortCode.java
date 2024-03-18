@@ -2,10 +2,13 @@ package com.abcbank.shortcode.shortcode.entities;
 
 import java.time.LocalDateTime;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+
+import com.abcbank.shortcode.shortcode.utils.Hashing;
 
 import lombok.Data;
 import lombok.ToString;
@@ -14,6 +17,7 @@ import lombok.ToString;
 @Data
 @Entity
 public class ShortCode {
+
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -31,4 +35,9 @@ public class ShortCode {
 	private LocalDateTime dateInitiated;
 	private LocalDateTime dateApproved;
 	private boolean approved = false;
+	@Column(columnDefinition = "boolean default false")
+	private boolean deleteApproved = false;
+	@Column(columnDefinition = "boolean default false")
+	private boolean deleted = false;
+	private String hash;
 }

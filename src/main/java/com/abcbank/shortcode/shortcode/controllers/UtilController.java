@@ -40,6 +40,17 @@ public class UtilController {
 	@Autowired
 	ShortCodeService shortCodeService;
 
+	public static void main(String[] args) {
+	    ShortCode shortie = new ShortCode();
+		shortie.setAccountName("Samuel Waithaka");
+		shortie.setAccountNumber("001190001000062");
+		shortie.setCustId("001133300");
+		shortie.setEmailAddress("samuel.waithaka@abcthebank.com");
+		shortie.setId(12);
+		shortie.setShortCode(3500023);
+		System.out.println(shortie.hashCode());	
+	}
+
 	@GetMapping("/print/{shortCode}")
 	public ResponseEntity<Resource> downloadSlip(@PathVariable int shortCode) throws IOException {
 		try {

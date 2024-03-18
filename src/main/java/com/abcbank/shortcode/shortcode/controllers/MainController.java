@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.abcbank.shortcode.shortcode.entities.DTOAccount;
 import com.abcbank.shortcode.shortcode.entities.DTOApproval;
 import com.abcbank.shortcode.shortcode.entities.DTOResponse;
+import com.abcbank.shortcode.shortcode.entities.DTOShortCode;
 import com.abcbank.shortcode.shortcode.entities.ShortCode;
 import com.abcbank.shortcode.shortcode.middleware.ShortCodeService;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
@@ -67,8 +68,18 @@ public class MainController {
 	@RolesAllowed({"apicaller","maker"})
 	@ResponseBody
 	public DTOResponse initiate(@RequestBody ShortCode request) {
-		request.setApproved(false);
+		log.info(" ========== About to initiate short code reqeust, account number: {}, name: {}", request.getAccountNumber(), request.getAccountName());
+		List<ShortCode> list = shortCodeRepo.findByAccountNumberAndApproved(request.getAccountNumber(), true);
 		DTOResponse response = new DTOResponse();
+		if(list.size() > 0) {
+			int shortCodeValue = list.get(0).getShortCode();
+			log.info(" ================ Account existing, short code: {}", shortCodeValue);
+			response.setStatusCode("103");
+			response.setMessage("Shortcode is already granted for the account");
+			return response;
+		}
+		request.setApproved(false);
+		
 		if(shortCodeService.validateRequest(request) == false) {
 			response.setStatusCode("104");
 			response.setMessage("Some details are missing in the request");
@@ -83,14 +94,58 @@ public class MainController {
 			return response;
 		}
 		request.setDateInitiated(LocalDateTime.now());
+		
 		ShortCode shortCode = shortCodeRepo.save(request);
 
 		if(shortCode.getId() > 0) {
+			String hash = shortCodeService.generateHash(shortCode);
+			shortCode.setHash(hash);
+			shortCodeRepo.save(request);
 			response.setStatusCode("000");
 			response.setMessage("Short code request initiated successfully");
 		} else {
 			response.setStatusCode("104");
 			response.setMessage("Request not initiated, error occured");
+		}
+		return response;
+	}
+
+	/**
+	 * 
+	 * @param request 
+	 * @return
+	 */
+	@PostMapping("/delete")
+	@RolesAllowed({"apicaller","maker"})
+	@ResponseBody
+	public DTOResponse delete(@RequestBody DTOShortCode request) {
+		DTOResponse response = new DTOResponse();
+		ShortCode shortCode = shortCodeRepo.findByShortCode(request.getShortCode());
+		if(shortCode == null) {
+			response.setStatusCode("104");
+			response.setMessage("Shortcode does not exist!");
+			return response;
+		}
+		if(!shortCode.getAccountNumber().equalsIgnoreCase(request.getAccountNumber())) {
+			response.setStatusCode("104");
+			response.setMessage("Something wrong with the request");
+			return response;
+		}
+
+		if(shortCode.isDeleteApproved() == true) {
+			shortCode.setDeleted(true);
+			response.setMessage("Short code has been deleted from the system");
+		} else {
+		    shortCode.setDeleteApproved(true);
+			response.setMessage("Short code delete initiated successfully, pending approval");
+		}
+		
+		if(shortCode.getId() > 0) {
+			response.setStatusCode("000");
+			shortCodeRepo.save(shortCode);
+		} else {
+			response.setStatusCode("104");
+			response.setMessage("Request not completed, error occured");
 		}
 		return response;
 	}
@@ -113,13 +168,21 @@ public class MainController {
 	@PostMapping("/approve")
 	@RolesAllowed({"apicaller","checker"})
 	@ResponseBody
-	public ShortCode approve(@RequestBody DTOApproval request) {
+	public DTOResponse approve(@RequestBody DTOApproval request) {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(request.getAccountNumber());
 		log.info(shortCodeList + "");
 		int count = shortCodeList.size();
 		ShortCode shortCode = new ShortCode();
+		DTOResponse response = new DTOResponse();
 		if(count > 0) {
 			shortCode = shortCodeList.get(0);
+			String generatedHash = shortCodeService.generateHash(shortCode);
+			log.info("============ Hash - Stored: {}, Generated: {}", shortCode.getHash(), generatedHash);
+			if(!generatedHash.equals(shortCode.getHash())) {
+				response.setStatusCode("104");
+				response.setMessage("Alarm: failed integrity check!");
+				return response;
+			}
 			log.info(shortCode + "");
 			shortCode.setSequenceNumber(count);
 			shortCode.setApprover(request.getApprover());
@@ -127,19 +190,31 @@ public class MainController {
 			shortCode.setShortCode(Integer.parseInt(shortCodeValue));
 			shortCode.setDateApproved(LocalDateTime.now());
 			shortCode.setApproved(true);
+			generatedHash = shortCodeService.generateHash(shortCode);
+			shortCode.setHash(generatedHash);
 			shortCode = shortCodeRepo.save(shortCode);
 			
 			String filePath = new UtilController().generateSlip(shortCode.getShortCode());
 			log.info("File path: " + filePath);
 			shortCodeService.sendReceiptEmail(shortCode);
+			response.setStatusCode("000");
+			response.setMessage("Shortcode successfully generated");
 		} 
-		return shortCode;
+		return response;
 	}
 
-	@GetMapping("/get-account/{shortCode}")
-	public String getAccount(@PathVariable int shortCode) {
+	@GetMapping("/get-account/{shortCodeNumber}")
+	public String getAccount(@PathVariable int shortCodeNumber) {
+		log.info("================ shortCodeNumber: {}", shortCodeNumber);
 		try {
-			return shortCodeRepo.findByShortCode(shortCode).getAccountNumber();
+			ShortCode shortCode = shortCodeRepo.findByShortCode(shortCodeNumber);
+			if(shortCode == null) return null;
+			log.info("================ shortCode: {}", shortCode);
+			String generatedHash = shortCodeService.generateHash(shortCode);
+			String storedHash = shortCode.getHash();
+			log.info("================= StoredHash: {}, GeneratedHash: {}", storedHash, generatedHash);
+			return (generatedHash.equals(storedHash)) ? 
+			    shortCode.isDeleted() == false ? shortCode.getAccountNumber() : null : null;
 		} catch(Exception e) {
 			return null;
 		}
