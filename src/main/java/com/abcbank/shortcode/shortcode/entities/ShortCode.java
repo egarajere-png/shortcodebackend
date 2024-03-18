@@ -36,7 +36,7 @@ public class ShortCode {
 	private LocalDateTime dateApproved;
 	private boolean approved = false;
 	@Column(columnDefinition = "boolean default false")
-	private boolean deleteApproved = false;
+	private boolean deleteInitiated = false;
 	@Column(columnDefinition = "boolean default false")
 	private boolean deleted = false;
 	private String hash;

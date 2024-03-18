@@ -12,5 +12,6 @@ public interface ShortCodeRepo extends CrudRepository<ShortCode, Integer> {
 	List<ShortCode> findByApproved(boolean isApproved);
 	List<ShortCode> findByAccountNumberOrderByIdDesc(String accountNumber);
 	List<ShortCode> findByAccountNumberAndApproved(String accountNumber, boolean approved);
+	List<ShortCode> findByDeleteInitiated(boolean initiated);
 	ShortCode findByShortCode(int shortCode);
 }
