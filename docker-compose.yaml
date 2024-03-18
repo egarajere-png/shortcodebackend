@@ -1,10 +1,11 @@
 version: "3.9"
 services:
   shortcode:
+    build: .
+    image: shortcodes:v1
     container_name: shortcodes
     network_mode: host
     restart: always
-    build: .
     #ports:
     #  - "8082:8082"
     volumes:
