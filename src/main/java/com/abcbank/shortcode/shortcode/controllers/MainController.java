@@ -49,8 +49,10 @@ public class MainController {
 		String url = "http://" + finqueryHost + "/api/finacle/account-data/" + accountNumber;
 		String response = HTTPSClient.sendHttpsRequest(url, "", "get", new HashMap<>(), "text");
 		JSONObject json = new JSONObject(response);
-		String idNumber = json.getString("idNumber");
-		String passPortNumber = json.getString("ppNumber");
+		String idNumber = null;
+		String passPortNumber = null;
+		try {idNumber = json.getString("idNumber");} catch(Exception e) {}
+		try {passPortNumber = json.getString("ppNumber");} catch(Exception e) {}
 		String idOrPasspord = idNumber != null ? idNumber : passPortNumber != null ? passPortNumber : "None";
 		DTOAccount account = new DTOAccount();
 		account.setAccountName(json.getString("accountName"));
