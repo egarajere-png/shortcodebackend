@@ -1,5 +1,5 @@
 ARG VERSION=0.0.1-SNAPSHOT
-FROM openjdk:11.0.8-jre-slim
+FROM openjdk:11
 MAINTAINER "samuel.waithaka@abcthebank.com"
 
 WORKDIR /app

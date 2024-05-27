@@ -46,17 +46,20 @@ public class MainController {
 	@GetMapping("/validate/{accountNumber}")
 	@RolesAllowed({ "apicaller", "maker", "checker" })
 	public DTOAccount validate(@PathVariable String accountNumber) {
-		String url = "http://" + finqueryHost + "/account/" + accountNumber;
+		String url = "http://" + finqueryHost + "/api/finacle/account-data/" + accountNumber;
 		String response = HTTPSClient.sendHttpsRequest(url, "", "get", new HashMap<>(), "text");
 		JSONObject json = new JSONObject(response);
+		String idNumber = json.getString("idNumber");
+		String passPortNumber = json.getString("ppNumber");
+		String idOrPasspord = idNumber != null ? idNumber : passPortNumber != null ? passPortNumber : "None";
 		DTOAccount account = new DTOAccount();
 		account.setAccountName(json.getString("accountName"));
 		account.setAccountNumber(json.getString("accountNumber"));
 		account.setCustId(json.getString("custId"));
-		account.setIdNumber(json.getString("idNumber"));
+		account.setIdNumber(idOrPasspord);
 		account.setEmailAddress(json.getString("emailAddress"));
-		account.setPhoneNumber(json.getString("phoneNum1"));
-		account.setAccountStatus(json.getString("accountStatus"));
+		account.setPhoneNumber(json.getString("phoneNumber"));
+		account.setAccountStatus(json.getString("status"));
 		return account;
 	}
 
