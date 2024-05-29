@@ -89,7 +89,7 @@ public class UtilController {
 				data.put("accountNumber", shortCodeObj.getAccountNumber());
 				data.put("accountName", shortCodeObj.getAccountName());
 				data.put("shortCode", shortCodeObj.getShortCode());
-				data.put("sequenceNumber", shortCodeObj.getSequenceNumber());
+				//data.put("sequenceNumber", shortCodeObj.getSequenceNumber());
 				SlipGenerator.generateShortCodeSlip(data);
 			} else {
 				log.info("File already exists");

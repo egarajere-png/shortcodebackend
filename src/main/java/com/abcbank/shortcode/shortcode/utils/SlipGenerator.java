@@ -58,7 +58,7 @@ public class SlipGenerator {
 		shortCodeData.put("accountNumber", "001190001000062");
 		shortCodeData.put("accountName", "Samuel Waithaka");
 		shortCodeData.put("shortCode", "350001");
-		shortCodeData.put("sequenceNumber", "1");
+		//shortCodeData.put("sequenceNumber", "1");
 		generateShortCodeSlip(shortCodeData);
 	}
     
@@ -172,11 +172,9 @@ public class SlipGenerator {
         addEmptyLine(preface, 1);
         preface.add(new Paragraph("Should you have any issues/need any clarification, please contact us through", small));
         preface.add(new Paragraph(" Channels.Operations@abcthebank.com / talk2us@abcthebank.com", blueFont));
-        preface.add(new Paragraph(" for support.", small));
+        preface.add(new Paragraph(" or phone numbers 0701700700 / 0719015000 for support.", small));
         document.add(preface);
     }
-
-    
     
     private static void createTable2(Document document)
             throws BadElementException, DocumentException {
@@ -194,8 +192,8 @@ public class SlipGenerator {
         table.addCell(new Paragraph(accountNumber, smallBold));
         table.addCell(new Paragraph("UNIQUE CODE", small));
         table.addCell(new Paragraph(shortCodeData.get("shortCode").toString(), smallBold));
-        table.addCell(new Paragraph("SHORT CODE SEQUENCE NO.", small));
-        table.addCell(new Paragraph(shortCodeData.get("sequenceNumber").toString(), smallBold));
+        //table.addCell(new Paragraph("SHORT CODE SEQUENCE NO.", small));
+        //table.addCell(new Paragraph(shortCodeData.get("sequenceNumber").toString(), smallBold));
         document.add(preface);
         document.add(table);
     }
