@@ -9,9 +9,10 @@ import com.abcbank.shortcode.shortcode.entities.ShortCode;
 public interface ShortCodeRepo extends CrudRepository<ShortCode, Integer> {
 	List<ShortCode> findAll();
 	ShortCode findById(int id);
+	List<ShortCode> findByDeleted(boolean isDeleted);
 	List<ShortCode> findByApproved(boolean isApproved);
 	List<ShortCode> findByAccountNumberOrderByIdDesc(String accountNumber);
 	List<ShortCode> findByAccountNumberAndApproved(String accountNumber, boolean approved);
-	List<ShortCode> findByDeleteInitiated(boolean initiated);
+	List<ShortCode> findByDeleteInitiatedAndDeleted(boolean initiated, boolean deleted);
 	ShortCode findByShortCode(int shortCode);
 }

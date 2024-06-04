@@ -173,7 +173,7 @@ public class MainController {
 			response.setMessage("Something wrong with the request");
 			return response;
 		}
-
+		shortCode.setDeleteInitiated(false);
 		shortCode.setDeleted(true);
 		response.setMessage("Short code has been deleted from the system");
 
@@ -197,7 +197,7 @@ public class MainController {
 	@GetMapping("/pending-delete")
 	@ResponseBody
 	public List<ShortCode> getPendingDelete() {
-		List<ShortCode> shortCodeList = shortCodeRepo.findByDeleteInitiated(true);
+		List<ShortCode> shortCodeList = shortCodeRepo.findByDeleteInitiatedAndDeleted(true, false);
 		return shortCodeList;
 	}
 
