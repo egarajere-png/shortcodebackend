@@ -241,6 +241,7 @@ public class MainController {
 			log.info("File path: " + filePath);
 			shortCodeService.sendReceiptEmail(shortCode);
 			response.setStatusCode("000");
+			response.setShortCode(shortCode.getShortCode());
 			response.setMessage("Shortcode successfully generated");
 		}
 		return response;
