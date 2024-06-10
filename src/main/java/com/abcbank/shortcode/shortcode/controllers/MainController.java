@@ -117,6 +117,45 @@ public class MainController {
 		return response;
 	}
 
+	@PostMapping("/approve")
+	@RolesAllowed({ "apicaller", "checker" })
+	@ResponseBody
+	public DTOResponse approve(@RequestBody DTOApproval request) {
+		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(request.getAccountNumber());
+		log.info(shortCodeList + "");
+		int count = shortCodeList.size();
+		ShortCode shortCode = new ShortCode();
+		DTOResponse response = new DTOResponse();
+		if (count > 0) {
+			shortCode = shortCodeList.get(0);
+			String generatedHash = shortCodeService.generateHash(shortCode);
+			log.info("============ Hash - Stored: {}, Generated: {}", shortCode.getHash(), generatedHash);
+			if (!generatedHash.equals(shortCode.getHash())) {
+				response.setStatusCode("104");
+				response.setMessage("Alarm: failed integrity check!");
+				return response;
+			}
+			log.info(shortCode + "");
+			shortCode.setSequenceNumber(count);
+			shortCode.setApprover(request.getApprover());
+			String shortCodeValue = "35" + String.format("%04d", shortCode.getId());
+			shortCode.setShortCode(Integer.parseInt(shortCodeValue));
+			shortCode.setDateApproved(LocalDateTime.now());
+			shortCode.setApproved(true);
+			generatedHash = shortCodeService.generateHash(shortCode);
+			shortCode.setHash(generatedHash);
+			shortCode = shortCodeRepo.save(shortCode);
+
+			String filePath = new UtilController().generateSlip(shortCode.getShortCode());
+			log.info("File path: " + filePath);
+			shortCodeService.sendReceiptEmail(shortCode);
+			response.setStatusCode("000");
+			response.setShortCode(shortCode.getShortCode());
+			response.setMessage("Shortcode successfully generated");
+		}
+		return response;
+	}
+	
 	/**
 	 * 
 	 * @param request
@@ -140,6 +179,7 @@ public class MainController {
 		}
 
 		shortCode.setDeleteInitiated(true);
+		shortCode.setDeleteRemark(request.getRemark());
 		response.setMessage("Short code delete initiated successfully, pending approval");
 
 		if (shortCode.getId() > 0) {
@@ -206,45 +246,6 @@ public class MainController {
 	public List<ShortCode> getPending(@PathVariable String accountNumber) {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
 		return shortCodeList;
-	}
-
-	@PostMapping("/approve")
-	@RolesAllowed({ "apicaller", "checker" })
-	@ResponseBody
-	public DTOResponse approve(@RequestBody DTOApproval request) {
-		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(request.getAccountNumber());
-		log.info(shortCodeList + "");
-		int count = shortCodeList.size();
-		ShortCode shortCode = new ShortCode();
-		DTOResponse response = new DTOResponse();
-		if (count > 0) {
-			shortCode = shortCodeList.get(0);
-			String generatedHash = shortCodeService.generateHash(shortCode);
-			log.info("============ Hash - Stored: {}, Generated: {}", shortCode.getHash(), generatedHash);
-			if (!generatedHash.equals(shortCode.getHash())) {
-				response.setStatusCode("104");
-				response.setMessage("Alarm: failed integrity check!");
-				return response;
-			}
-			log.info(shortCode + "");
-			shortCode.setSequenceNumber(count);
-			shortCode.setApprover(request.getApprover());
-			String shortCodeValue = "35" + String.format("%04d", shortCode.getId());
-			shortCode.setShortCode(Integer.parseInt(shortCodeValue));
-			shortCode.setDateApproved(LocalDateTime.now());
-			shortCode.setApproved(true);
-			generatedHash = shortCodeService.generateHash(shortCode);
-			shortCode.setHash(generatedHash);
-			shortCode = shortCodeRepo.save(shortCode);
-
-			String filePath = new UtilController().generateSlip(shortCode.getShortCode());
-			log.info("File path: " + filePath);
-			shortCodeService.sendReceiptEmail(shortCode);
-			response.setStatusCode("000");
-			response.setShortCode(shortCode.getShortCode());
-			response.setMessage("Shortcode successfully generated");
-		}
-		return response;
 	}
 
 	@GetMapping("/get-account/{shortCodeNumber}")

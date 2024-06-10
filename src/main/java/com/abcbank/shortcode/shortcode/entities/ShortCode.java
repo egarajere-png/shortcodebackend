@@ -30,6 +30,8 @@ public class ShortCode {
 	private String idNumber;
 	private String custId;
 	private String remark;
+	@Column(columnDefinition = "varchar(255) default ''")
+	private String deleteRemark;
 	private int shortCode;
 	private int sequenceNumber;
 	private LocalDateTime dateInitiated;
