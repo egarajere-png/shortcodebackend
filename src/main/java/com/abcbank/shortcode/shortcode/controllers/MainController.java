@@ -165,6 +165,7 @@ public class MainController {
 	@RolesAllowed({ "apicaller", "maker" })
 	@ResponseBody
 	public DTOResponse delete(@RequestBody DTOShortCode request) {
+		log.info(" ===================== About to delete: {}", request);
 		DTOResponse response = new DTOResponse();
 		ShortCode shortCode = shortCodeRepo.findByShortCode(request.getShortCode());
 		if (shortCode == null) {
@@ -189,6 +190,7 @@ public class MainController {
 			response.setStatusCode("104");
 			response.setMessage("Request not completed, error occured");
 		}
+		log.info(" ===================== Delete response: {}", response);
 		return response;
 	}
 
@@ -201,6 +203,7 @@ public class MainController {
 	@RolesAllowed({ "apicaller", "maker" })
 	@ResponseBody
 	public DTOResponse approveDelete(@RequestBody DTOShortCode request) {
+		log.info(" ===================== About to approve delete: {}", request);
 		DTOResponse response = new DTOResponse();
 		ShortCode shortCode = shortCodeRepo.findByShortCode(request.getShortCode());
 		if (shortCode == null) {
@@ -224,6 +227,7 @@ public class MainController {
 			response.setStatusCode("104");
 			response.setMessage("Request not completed, error occured");
 		}
+		log.info(" ===================== About to approve delete: {}", response);
 		return response;
 	}
 
@@ -238,6 +242,7 @@ public class MainController {
 	@ResponseBody
 	public List<ShortCode> getPendingDelete() {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByDeleteInitiatedAndDeleted(true, false);
+		log.info(" ===================== Pending delete: {}", shortCodeList);
 		return shortCodeList;
 	}
 
