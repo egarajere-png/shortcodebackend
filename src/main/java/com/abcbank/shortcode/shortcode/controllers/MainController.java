@@ -76,7 +76,7 @@ public class MainController {
 	public DTOResponse initiate(@RequestBody ShortCode request) {
 		log.info(" ========== About to initiate short code reqeust, account number: {}, name: {}",
 				request.getAccountNumber(), request.getAccountName());
-		List<ShortCode> list = shortCodeRepo.findByAccountNumberAndApproved(request.getAccountNumber(), true);
+		List<ShortCode> list = shortCodeRepo.findByAccountNumberAndApprovedAndDeleted(request.getAccountNumber(), true, false);
 		DTOResponse response = new DTOResponse();
 		if (list.size() > 0) {
 			int shortCodeValue = list.get(0).getShortCode();
