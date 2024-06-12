@@ -122,20 +122,17 @@ public class MainController {
 	@ResponseBody
 	public DTOResponse approve(@RequestBody DTOApproval request) {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(request.getAccountNumber());
-		log.info(shortCodeList + "");
 		int count = shortCodeList.size();
 		ShortCode shortCode = new ShortCode();
 		DTOResponse response = new DTOResponse();
 		if (count > 0) {
 			shortCode = shortCodeList.get(0);
 			String generatedHash = shortCodeService.generateHash(shortCode);
-			log.info("============ Hash - Stored: {}, Generated: {}", shortCode.getHash(), generatedHash);
 			if (!generatedHash.equals(shortCode.getHash())) {
 				response.setStatusCode("104");
 				response.setMessage("Alarm: failed integrity check!");
 				return response;
 			}
-			log.info(shortCode + "");
 			shortCode.setSequenceNumber(count);
 			shortCode.setApprover(request.getApprover());
 			String shortCodeValue = "35" + String.format("%04d", shortCode.getId());
@@ -165,7 +162,6 @@ public class MainController {
 	@RolesAllowed({ "apicaller", "maker" })
 	@ResponseBody
 	public DTOResponse delete(@RequestBody DTOShortCode request) {
-		log.info(" ===================== About to delete: {}", request);
 		DTOResponse response = new DTOResponse();
 		ShortCode shortCode = shortCodeRepo.findByShortCode(request.getShortCode());
 		if (shortCode == null) {
@@ -190,7 +186,6 @@ public class MainController {
 			response.setStatusCode("104");
 			response.setMessage("Request not completed, error occured");
 		}
-		log.info(" ===================== Delete response: {}", response);
 		return response;
 	}
 
@@ -203,7 +198,6 @@ public class MainController {
 	@RolesAllowed({ "apicaller", "maker" })
 	@ResponseBody
 	public DTOResponse approveDelete(@RequestBody DTOShortCode request) {
-		log.info(" ===================== About to approve delete: {}", request);
 		DTOResponse response = new DTOResponse();
 		ShortCode shortCode = shortCodeRepo.findByShortCode(request.getShortCode());
 		if (shortCode == null) {
@@ -227,7 +221,6 @@ public class MainController {
 			response.setStatusCode("104");
 			response.setMessage("Request not completed, error occured");
 		}
-		log.info(" ===================== About to approve delete: {}", response);
 		return response;
 	}
 
@@ -250,13 +243,11 @@ public class MainController {
 	@ResponseBody
 	public List<ShortCode> getPending(@PathVariable String accountNumber) {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
-		log.info("Getting short code for account number {}: {}", accountNumber, shortCodeList);
 		return shortCodeList;
 	}
 
 	@GetMapping("/get-account/{shortCodeNumber}")
 	public String getAccount(@PathVariable int shortCodeNumber) {
-		log.info("================ shortCodeNumber: {}", shortCodeNumber);
 		try {
 			ShortCode shortCode = shortCodeRepo.findByShortCode(shortCodeNumber);
 			if (shortCode == null)
