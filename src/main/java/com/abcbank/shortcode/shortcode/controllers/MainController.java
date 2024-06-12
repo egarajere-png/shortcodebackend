@@ -245,6 +245,7 @@ public class MainController {
 	@ResponseBody
 	public List<ShortCode> getPending(@PathVariable String accountNumber) {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
+		log.info("Getting short code for account number {}: {}", accountNumber, shortCodeList);
 		return shortCodeList;
 	}
 
