@@ -176,7 +176,7 @@ public class MainController {
 		}
 
 		shortCode.setDeleteInitiated(true);
-		shortCode.setDeleteRemark(request.getRemark());
+		shortCode.setDeleteRemark(request.getDeleteRemark());
 		response.setMessage("Short code delete initiated successfully, pending approval");
 
 		if (shortCode.getId() > 0) {

@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class DTOShortCode {
 	private String accountNumber;
-	private String remark;
+	private String deleteRemark;
     private int shortCode;
 }
