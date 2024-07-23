@@ -50,18 +50,22 @@ public class MainController {
 		String response = HTTPSClient.sendHttpsRequest(url, "", "get", new HashMap<>(), "text");
 		JSONObject json = new JSONObject(response);
 		String idNumber = null;
+		String custId = null;
 		String passPortNumber = null;
 		try {idNumber = json.getString("idNumber");} catch(Exception e) {}
+		try {custId = json.getString("custId");} catch(Exception e) {}
 		try {passPortNumber = json.getString("ppNumber");} catch(Exception e) {}
 		String idOrPasspord = idNumber != null ? idNumber : passPortNumber != null ? passPortNumber : "None";
 		DTOAccount account = new DTOAccount();
-		account.setAccountName(json.getString("accountName"));
-		account.setAccountNumber(json.getString("accountNumber"));
-		account.setCustId(json.getString("custId"));
-		account.setIdNumber(idOrPasspord);
-		account.setEmailAddress(json.getString("emailAddress"));
-		account.setPhoneNumber(json.getString("phoneNumber"));
-		account.setAccountStatus(json.getString("status"));
+		if(custId != null) { 
+			account.setAccountName(json.getString("accountName"));
+			account.setAccountNumber(json.getString("accountNumber"));
+			account.setCustId(custId);
+			account.setIdNumber(idOrPasspord);
+			account.setEmailAddress(json.getString("emailAddress"));
+			account.setPhoneNumber(json.getString("phoneNumber"));
+			account.setAccountStatus(json.getString("status"));
+		}
 		return account;
 	}
 
@@ -152,7 +156,7 @@ public class MainController {
 		}
 		return response;
 	}
-	
+
 	/**
 	 * 
 	 * @param request
@@ -258,7 +262,7 @@ public class MainController {
 			log.info("================= StoredHash: {}, GeneratedHash: {}", storedHash, generatedHash);
 			return (generatedHash.equals(storedHash))
 					? shortCode.isDeleted() == false ? shortCode.getAccountNumber() : null
-					: null;
+							: null;
 		} catch (Exception e) {
 			return null;
 		}
