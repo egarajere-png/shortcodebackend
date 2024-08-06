@@ -108,6 +108,8 @@ public class MainController {
 
 		ShortCode shortCode = shortCodeRepo.save(request);
 
+		String shortCodeValue = "35" + String.format("%04d", shortCode.getId());
+		shortCode.setShortCode(Integer.parseInt(shortCodeValue));
 		if (shortCode.getId() > 0) {
 			String hash = shortCodeService.generateHash(shortCode);
 			shortCode.setHash(hash);
@@ -139,8 +141,6 @@ public class MainController {
 			}
 			shortCode.setSequenceNumber(count);
 			shortCode.setApprover(request.getApprover());
-			String shortCodeValue = "35" + String.format("%04d", shortCode.getId());
-			shortCode.setShortCode(Integer.parseInt(shortCodeValue));
 			shortCode.setDateApproved(LocalDateTime.now());
 			shortCode.setApproved(true);
 			generatedHash = shortCodeService.generateHash(shortCode);
