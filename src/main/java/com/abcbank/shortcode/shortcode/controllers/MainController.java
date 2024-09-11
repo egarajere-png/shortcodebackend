@@ -109,12 +109,14 @@ public class MainController {
 		ShortCode shortCode = shortCodeRepo.save(request);
 
 		String shortCodeValue = "35" + String.format("%04d", shortCode.getId());
-		shortCode.setShortCode(Integer.parseInt(shortCodeValue));
+		int shortCodeInInt = Integer.parseInt(shortCodeValue);
+		shortCode.setShortCode(shortCodeInInt);
 		if (shortCode.getId() > 0) {
 			String hash = shortCodeService.generateHash(shortCode);
 			shortCode.setHash(hash);
 			shortCodeRepo.save(request);
 			response.setStatusCode("000");
+			response.setShortCode(shortCodeInInt);
 			response.setMessage("Short code request initiated successfully");
 		} else {
 			response.setStatusCode("104");
