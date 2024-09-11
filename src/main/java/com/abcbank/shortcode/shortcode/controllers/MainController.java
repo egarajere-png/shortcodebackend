@@ -201,7 +201,7 @@ public class MainController {
 	 * @return
 	 */
 	@PostMapping("/approve-delete")
-	@RolesAllowed({ "apicaller", "maker" })
+	@RolesAllowed({ "apicaller", "checker" })
 	@ResponseBody
 	public DTOResponse approveDelete(@RequestBody DTOShortCode request) {
 		DTOResponse response = new DTOResponse();
