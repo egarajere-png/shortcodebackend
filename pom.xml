@@ -110,6 +110,11 @@
 		    <groupId>org.springframework.security</groupId>
 		    <artifactId>spring-security-config</artifactId>
 		</dependency>
+		<dependency>
+		    <groupId>com.github.ulisesbocchio</groupId>
+		    <artifactId>jasypt-maven-plugin</artifactId>
+		    <version>3.0.5</version>
+		</dependency>
 		<!-- end keycloak dependencies -->
 	</dependencies>
 
@@ -119,6 +124,11 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+		      <groupId>com.github.ulisesbocchio</groupId>
+		      <artifactId>jasypt-maven-plugin</artifactId>
+		      <version>3.0.5</version>
+		   </plugin>
 		</plugins>
 	</build>
 
