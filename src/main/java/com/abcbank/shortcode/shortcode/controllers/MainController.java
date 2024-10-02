@@ -278,9 +278,11 @@ public class MainController {
 	public ShortCode getAccountDetails(@PathVariable int shortCode) {
 		try {
 			ShortCode sc = shortCodeRepo.findByShortCode(shortCode);
+			log.info("================= shortcode: ", sc);
 			if(sc.getAccountNumber() != null) {
 				String maintainedSC = finacleData.fetchCBSShortCode(sc.getAccountNumber());
-				if(maintainedSC.equals(shortCode)) {
+				log.info("================= maintainedSC: ", maintainedSC);
+				if(maintainedSC.equals(Integer.toString(shortCode))) {
 					return sc;
 				}
 			}
