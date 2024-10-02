@@ -23,6 +23,7 @@ import com.abcbank.shortcode.shortcode.entities.DTOApproval;
 import com.abcbank.shortcode.shortcode.entities.DTOResponse;
 import com.abcbank.shortcode.shortcode.entities.DTOShortCode;
 import com.abcbank.shortcode.shortcode.entities.ShortCode;
+import com.abcbank.shortcode.shortcode.middleware.FinacleData;
 import com.abcbank.shortcode.shortcode.middleware.ShortCodeService;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
 import com.abcbank.shortcode.shortcode.utils.HTTPSClient;
@@ -39,6 +40,9 @@ public class MainController {
 
 	@Autowired
 	ShortCodeRepo shortCodeRepo;
+	
+	@Autowired
+	FinacleData finacleData;
 
 	@Autowired
 	ShortCodeService shortCodeService;
@@ -273,9 +277,16 @@ public class MainController {
 	@GetMapping("/get-account-details/{shortCode}")
 	public ShortCode getAccountDetails(@PathVariable int shortCode) {
 		try {
-			return shortCodeRepo.findByShortCode(shortCode);
+			ShortCode sc = shortCodeRepo.findByShortCode(shortCode);
+			if(sc.getAccountNumber() != null) {
+				String maintainedSC = finacleData.fetchCBSShortCode(sc.getAccountNumber());
+				if(maintainedSC.equals(shortCode)) {
+					return sc;
+				}
+			}
 		} catch (Exception e) {
-			return new ShortCode();
+			log.error("================ Error: {}", e.getMessage());
 		}
+		return new ShortCode();
 	}
 }
