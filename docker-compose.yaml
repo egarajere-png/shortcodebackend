@@ -9,6 +9,7 @@ services:
     #ports:
     #  - "8082:8082"
     volumes:
+      - /tmp:/tmp
       - /var/aes:/aes
       - /var/logs:/logs
 #networks:
