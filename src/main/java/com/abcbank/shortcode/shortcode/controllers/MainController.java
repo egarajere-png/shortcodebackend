@@ -46,6 +46,9 @@ public class MainController {
 
 	@Autowired
 	ShortCodeService shortCodeService;
+	
+	@Autowired
+	UtilController utilController;
 
 	@GetMapping("/validate/{accountNumber}")
 	@RolesAllowed({ "apicaller", "maker", "checker" })
@@ -153,7 +156,7 @@ public class MainController {
 			shortCode.setHash(generatedHash);
 			shortCode = shortCodeRepo.save(shortCode);
 
-			String filePath = new UtilController().generateSlip(shortCode.getShortCode());
+			String filePath = utilController.generateSlip(shortCode.getShortCode());
 			log.info("File path: " + filePath);
 			shortCodeService.sendReceiptEmail(shortCode);
 			response.setStatusCode("000");
