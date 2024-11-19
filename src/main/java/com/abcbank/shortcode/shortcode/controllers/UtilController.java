@@ -96,6 +96,7 @@ public class UtilController {
 			}
 			return filePath;
 		} catch(Exception e) {
+			e.printStackTrace();
 			return null;
 		}
 	}
