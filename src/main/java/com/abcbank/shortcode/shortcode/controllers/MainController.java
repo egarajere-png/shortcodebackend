@@ -1,7 +1,5 @@
 package com.abcbank.shortcode.shortcode.controllers;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -247,10 +245,9 @@ public class MainController {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(false);
 		List<ShortCodeDto> resultList = new ArrayList<>();
 		for(ShortCode sc : shortCodeList) {
-			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(formatter.format(sc.getDateApproved()));
-			dto.setDateInitiated(formatter.format(sc.getDateInitiated()));
+			dto.setDateApproved(sc.getDateApproved().toString());
+			dto.setDateInitiated(sc.getDateInitiated().toString());
 			dto.setAccountName(sc.getAccountName());
 			dto.setAccountNumber(sc.getAccountNumber());
 			dto.setApproved(sc.isApproved());
@@ -272,10 +269,9 @@ public class MainController {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(true);
 		List<ShortCodeDto> resultList = new ArrayList<>();
 		for(ShortCode sc : shortCodeList) {
-			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(formatter.format(sc.getDateApproved()));
-			dto.setDateInitiated(formatter.format(sc.getDateInitiated()));
+			dto.setDateApproved(sc.getDateApproved().toString());
+			dto.setDateInitiated(sc.getDateInitiated().toString());
 			dto.setAccountName(sc.getAccountName());
 			dto.setAccountNumber(sc.getAccountNumber());
 			dto.setApproved(sc.isApproved());
@@ -298,10 +294,9 @@ public class MainController {
 		log.info(" ===================== Pending delete: {}", shortCodeList);
 		List<ShortCodeDto> resultList = new ArrayList<>();
 		for(ShortCode sc : shortCodeList) {
-			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(formatter.format(sc.getDateApproved()));
-			dto.setDateInitiated(formatter.format(sc.getDateInitiated()));
+			dto.setDateApproved(sc.getDateApproved().toString());
+			dto.setDateInitiated(sc.getDateInitiated().toString());
 			dto.setAccountName(sc.getAccountName());
 			dto.setAccountNumber(sc.getAccountNumber());
 			dto.setApproved(sc.isApproved());
@@ -323,10 +318,9 @@ public class MainController {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
 		List<ShortCodeDto> resultList = new ArrayList<>();
 		for(ShortCode sc : shortCodeList) {
-			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(formatter.format(sc.getDateApproved()));
-			dto.setDateInitiated(formatter.format(sc.getDateInitiated()));
+			dto.setDateApproved(sc.getDateApproved().toString());
+			dto.setDateInitiated(sc.getDateInitiated().toString());
 			dto.setAccountName(sc.getAccountName());
 			dto.setAccountNumber(sc.getAccountNumber());
 			dto.setApproved(sc.isApproved());
