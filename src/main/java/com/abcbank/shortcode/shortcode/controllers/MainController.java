@@ -1,6 +1,9 @@
 package com.abcbank.shortcode.shortcode.controllers;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.abcbank.shortcode.shortcode.dto.ShortCodeDto;
 import com.abcbank.shortcode.shortcode.entities.DTOAccount;
 import com.abcbank.shortcode.shortcode.entities.DTOApproval;
 import com.abcbank.shortcode.shortcode.entities.DTOResponse;
@@ -239,31 +243,103 @@ public class MainController {
 
 	@GetMapping("/pending")
 	@ResponseBody
-	public List<ShortCode> getPending() {
+	public List<ShortCodeDto> getPending() {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(false);
-		return shortCodeList;
+		List<ShortCodeDto> resultList = new ArrayList<>();
+		for(ShortCode sc : shortCodeList) {
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			ShortCodeDto dto = new ShortCodeDto();
+			dto.setDateApproved(formatter.format(sc.getDateApproved()));
+			dto.setDateInitiated(formatter.format(sc.getDateInitiated()));
+			dto.setAccountName(sc.getAccountName());
+			dto.setAccountNumber(sc.getAccountNumber());
+			dto.setApproved(sc.isApproved());
+			dto.setApprover(sc.getApprover());
+			dto.setCustId(sc.getCustId());
+			dto.setDeleted(sc.isDeleted());
+			dto.setEmailAddress(sc.getEmailAddress());
+			dto.setId(sc.getId());
+			dto.setShortCode(sc.getShortCode());
+			resultList.add(dto);
+		}
+		
+		return resultList;
 	}
 	
 	@GetMapping("/approved")
 	@ResponseBody
-	public List<ShortCode> getApproved() {
+	public List<ShortCodeDto> getApproved() {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(true);
-		return shortCodeList;
+		List<ShortCodeDto> resultList = new ArrayList<>();
+		for(ShortCode sc : shortCodeList) {
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			ShortCodeDto dto = new ShortCodeDto();
+			dto.setDateApproved(formatter.format(sc.getDateApproved()));
+			dto.setDateInitiated(formatter.format(sc.getDateInitiated()));
+			dto.setAccountName(sc.getAccountName());
+			dto.setAccountNumber(sc.getAccountNumber());
+			dto.setApproved(sc.isApproved());
+			dto.setApprover(sc.getApprover());
+			dto.setCustId(sc.getCustId());
+			dto.setDeleted(sc.isDeleted());
+			dto.setEmailAddress(sc.getEmailAddress());
+			dto.setId(sc.getId());
+			dto.setShortCode(sc.getShortCode());
+			resultList.add(dto);
+		}
+		
+		return resultList;
 	}
 
 	@GetMapping("/pending-delete")
 	@ResponseBody
-	public List<ShortCode> getPendingDelete() {
+	public List<ShortCodeDto> getPendingDelete() {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByDeleteInitiatedAndDeleted(true, false);
 		log.info(" ===================== Pending delete: {}", shortCodeList);
-		return shortCodeList;
+		List<ShortCodeDto> resultList = new ArrayList<>();
+		for(ShortCode sc : shortCodeList) {
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			ShortCodeDto dto = new ShortCodeDto();
+			dto.setDateApproved(formatter.format(sc.getDateApproved()));
+			dto.setDateInitiated(formatter.format(sc.getDateInitiated()));
+			dto.setAccountName(sc.getAccountName());
+			dto.setAccountNumber(sc.getAccountNumber());
+			dto.setApproved(sc.isApproved());
+			dto.setApprover(sc.getApprover());
+			dto.setCustId(sc.getCustId());
+			dto.setDeleted(sc.isDeleted());
+			dto.setEmailAddress(sc.getEmailAddress());
+			dto.setId(sc.getId());
+			dto.setShortCode(sc.getShortCode());
+			resultList.add(dto);
+		}
+		
+		return resultList;
 	}
 
 	@GetMapping("/get-shortcodes/{accountNumber}")
 	@ResponseBody
-	public List<ShortCode> getPending(@PathVariable String accountNumber) {
+	public List<ShortCodeDto> getPending(@PathVariable String accountNumber) {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
-		return shortCodeList;
+		List<ShortCodeDto> resultList = new ArrayList<>();
+		for(ShortCode sc : shortCodeList) {
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			ShortCodeDto dto = new ShortCodeDto();
+			dto.setDateApproved(formatter.format(sc.getDateApproved()));
+			dto.setDateInitiated(formatter.format(sc.getDateInitiated()));
+			dto.setAccountName(sc.getAccountName());
+			dto.setAccountNumber(sc.getAccountNumber());
+			dto.setApproved(sc.isApproved());
+			dto.setApprover(sc.getApprover());
+			dto.setCustId(sc.getCustId());
+			dto.setDeleted(sc.isDeleted());
+			dto.setEmailAddress(sc.getEmailAddress());
+			dto.setId(sc.getId());
+			dto.setShortCode(sc.getShortCode());
+			resultList.add(dto);
+		}
+		
+		return resultList;
 	}
 
 	@GetMapping("/get-account/{shortCodeNumber}")
