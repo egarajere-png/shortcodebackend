@@ -248,6 +248,7 @@ public class MainController {
 			ShortCodeDto dto = new ShortCodeDto();
 			dto.setDateApproved(sc.getDateApproved().toString());
 			dto.setDateInitiated(sc.getDateInitiated().toString());
+			dto.setInitiator(sc.getInitiator());
 			dto.setAccountName(sc.getAccountName());
 			dto.setAccountNumber(sc.getAccountNumber());
 			dto.setApproved(sc.isApproved());
@@ -272,6 +273,7 @@ public class MainController {
 			ShortCodeDto dto = new ShortCodeDto();
 			dto.setDateApproved(sc.getDateApproved().toString());
 			dto.setDateInitiated(sc.getDateInitiated().toString());
+			dto.setInitiator(sc.getInitiator());
 			dto.setAccountName(sc.getAccountName());
 			dto.setAccountNumber(sc.getAccountNumber());
 			dto.setApproved(sc.isApproved());
@@ -297,6 +299,7 @@ public class MainController {
 			ShortCodeDto dto = new ShortCodeDto();
 			dto.setDateApproved(sc.getDateApproved().toString());
 			dto.setDateInitiated(sc.getDateInitiated().toString());
+			dto.setInitiator(sc.getInitiator());
 			dto.setAccountName(sc.getAccountName());
 			dto.setAccountNumber(sc.getAccountNumber());
 			dto.setApproved(sc.isApproved());
@@ -321,6 +324,7 @@ public class MainController {
 			ShortCodeDto dto = new ShortCodeDto();
 			dto.setDateApproved(sc.getDateApproved().toString());
 			dto.setDateInitiated(sc.getDateInitiated().toString());
+			dto.setInitiator(sc.getInitiator());
 			dto.setAccountName(sc.getAccountName());
 			dto.setAccountNumber(sc.getAccountNumber());
 			dto.setApproved(sc.isApproved());
