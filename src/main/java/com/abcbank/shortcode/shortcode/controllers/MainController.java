@@ -243,6 +243,13 @@ public class MainController {
 		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(false);
 		return shortCodeList;
 	}
+	
+	@GetMapping("/approved")
+	@ResponseBody
+	public List<ShortCode> getApproved() {
+		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(true);
+		return shortCodeList;
+	}
 
 	@GetMapping("/pending-delete")
 	@ResponseBody
