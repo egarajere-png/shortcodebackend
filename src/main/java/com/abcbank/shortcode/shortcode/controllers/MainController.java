@@ -66,12 +66,12 @@ public class MainController {
 		try {passPortNumber = json.getString("ppNumber");} catch(Exception e) {}
 		String idOrPasspord = idNumber != null ? idNumber : passPortNumber != null ? passPortNumber : "None";
 		DTOAccount account = new DTOAccount();
-		if(custId != null) { 
+		if(custId != null) {
 			account.setAccountName(json.getString("accountName"));
 			account.setAccountNumber(json.getString("accountNumber"));
 			account.setCustId(custId);
 			account.setIdNumber(idOrPasspord);
-			account.setEmailAddress(json.getString("emailAddress"));
+			try {account.setEmailAddress(json.getString("emailAddress"));} catch(Exception e) {}
 			account.setPhoneNumber(json.getString("phoneNumber"));
 			account.setAccountStatus(json.getString("status"));
 		}
