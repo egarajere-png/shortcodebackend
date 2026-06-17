@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:14
+    container_name: shortcode-postgres
+    environment:
+      POSTGRES_DB: short_codes
+      POSTGRES_USER: short_codes_user
+      POSTGRES_PASSWORD: 5Hort_codes
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  shortcode:
+    build: .
+    container_name: shortcode-app
+    depends_on:
+      - postgres
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      JASYPT_ENCRYPTOR_PASSWORD: jasyptkey
+
+volumes:
+  postgres_data:

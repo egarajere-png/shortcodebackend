@@ -1,10 +1,10 @@
 ARG VERSION=0.0.1-SNAPSHOT
-FROM openjdk:11
-MAINTAINER "samuel.waithaka@abcthebank.com"
+FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
 COPY target/shortcode-0.0.1-SNAPSHOT.jar ./
 
-EXPOSE 8087
-ENTRYPOINT ["java", "-jar", "-Djasypt.encryptor.password=jasyptkey", "./shortcode-0.0.1-SNAPSHOT.jar"]
+EXPOSE 8088
+
+ENTRYPOINT ["java","-Djasypt.encryptor.password=jasyptkey","-jar","./shortcode-0.0.1-SNAPSHOT.jar"]

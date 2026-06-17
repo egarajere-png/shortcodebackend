@@ -39,7 +39,6 @@ public class MainController {
 
 	@Value("${service.params.finquery.host}")
 	private String finqueryHost;
-
 	@Autowired
 	ShortCodeRepo shortCodeRepo;
 	
