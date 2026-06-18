@@ -241,104 +241,51 @@ public class MainController {
 	@GetMapping("/pending")
 	@ResponseBody
 	public List<ShortCodeDto> getPending() {
-		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(false);
-		List<ShortCodeDto> resultList = new ArrayList<>();
-		for(ShortCode sc : shortCodeList) {
-			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(sc.getDateApproved().toString());
-			dto.setDateInitiated(sc.getDateInitiated().toString());
-			dto.setInitiator(sc.getInitiator());
-			dto.setAccountName(sc.getAccountName());
-			dto.setAccountNumber(sc.getAccountNumber());
-			dto.setApproved(sc.isApproved());
-			dto.setApprover(sc.getApprover());
-			dto.setCustId(sc.getCustId());
-			dto.setDeleted(sc.isDeleted());
-			dto.setEmailAddress(sc.getEmailAddress());
-			dto.setId(sc.getId());
-			dto.setShortCode(sc.getShortCode());
-			resultList.add(dto);
-		}
-		
-		return resultList;
-	}
+    List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(false);
+    List<ShortCodeDto> resultList = new ArrayList<>();
+    for (ShortCode sc : shortCodeList) {
+        resultList.add(convertToDto(sc));
+    }
+
+    return resultList;
+}
 	
 	@GetMapping("/approved")
 	@ResponseBody
 	public List<ShortCodeDto> getApproved() {
-		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(true);
-		List<ShortCodeDto> resultList = new ArrayList<>();
-		for(ShortCode sc : shortCodeList) {
-			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(sc.getDateApproved().toString());
-			dto.setDateInitiated(sc.getDateInitiated().toString());
-			dto.setInitiator(sc.getInitiator());
-			dto.setAccountName(sc.getAccountName());
-			dto.setAccountNumber(sc.getAccountNumber());
-			dto.setApproved(sc.isApproved());
-			dto.setApprover(sc.getApprover());
-			dto.setCustId(sc.getCustId());
-			dto.setDeleted(sc.isDeleted());
-			dto.setEmailAddress(sc.getEmailAddress());
-			dto.setId(sc.getId());
-			dto.setShortCode(sc.getShortCode());
-			resultList.add(dto);
-		}
-		
-		return resultList;
-	}
+    List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(true);
+    List<ShortCodeDto> resultList = new ArrayList<>();
+    for (ShortCode sc : shortCodeList) {
+        resultList.add(convertToDto(sc));
+    }
+
+    return resultList;
+}
 
 	@GetMapping("/pending-delete")
 	@ResponseBody
 	public List<ShortCodeDto> getPendingDelete() {
-		List<ShortCode> shortCodeList = shortCodeRepo.findByDeleteInitiatedAndDeleted(true, false);
-		log.info(" ===================== Pending delete: {}", shortCodeList);
-		List<ShortCodeDto> resultList = new ArrayList<>();
-		for(ShortCode sc : shortCodeList) {
-			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(sc.getDateApproved().toString());
-			dto.setDateInitiated(sc.getDateInitiated().toString());
-			dto.setInitiator(sc.getInitiator());
-			dto.setAccountName(sc.getAccountName());
-			dto.setAccountNumber(sc.getAccountNumber());
-			dto.setApproved(sc.isApproved());
-			dto.setApprover(sc.getApprover());
-			dto.setCustId(sc.getCustId());
-			dto.setDeleted(sc.isDeleted());
-			dto.setEmailAddress(sc.getEmailAddress());
-			dto.setId(sc.getId());
-			dto.setShortCode(sc.getShortCode());
-			resultList.add(dto);
-		}
-		
-		return resultList;
-	}
+    List<ShortCode> shortCodeList = shortCodeRepo.findByDeleteInitiatedAndDeleted(true, false);
+    log.info(" ===================== Pending delete: {}", shortCodeList);
+    List<ShortCodeDto> resultList = new ArrayList<>();
+    for (ShortCode sc : shortCodeList) {
+        resultList.add(convertToDto(sc));
+    }
+
+    return resultList;
+}
 
 	@GetMapping("/get-shortcodes/{accountNumber}")
 	@ResponseBody
 	public List<ShortCodeDto> getPending(@PathVariable String accountNumber) {
-		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
-		List<ShortCodeDto> resultList = new ArrayList<>();
-		for(ShortCode sc : shortCodeList) {
-			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(sc.getDateApproved().toString());
-			dto.setDateInitiated(sc.getDateInitiated().toString());
-			dto.setInitiator(sc.getInitiator());
-			dto.setAccountName(sc.getAccountName());
-			dto.setAccountNumber(sc.getAccountNumber());
-			dto.setApproved(sc.isApproved());
-			dto.setApprover(sc.getApprover());
-			dto.setCustId(sc.getCustId());
-			dto.setDeleted(sc.isDeleted());
-			dto.setEmailAddress(sc.getEmailAddress());
-			dto.setId(sc.getId());
-			dto.setShortCode(sc.getShortCode());
-			resultList.add(dto);
-		}
-		
-		return resultList;
-	}
+    List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
+    List<ShortCodeDto> resultList = new ArrayList<>();
+    for (ShortCode sc : shortCodeList) {
+        resultList.add(convertToDto(sc));
+    }
 
+    return resultList;
+}
 	@GetMapping("/get-account/{shortCodeNumber}")
 	public String getAccount(@PathVariable int shortCodeNumber) {
 		try {
@@ -373,5 +320,39 @@ public class MainController {
 			log.error("================ Error: {}", e.getMessage());
 		}
 		return new ShortCode();
+	}
+
+	private ShortCodeDto convertToDto(ShortCode sc) {
+    ShortCodeDto dto = new ShortCodeDto();
+
+    dto.setId(sc.getId());
+    dto.setInitiator(sc.getInitiator());
+    dto.setApprover(sc.getApprover());
+    dto.setAccountNumber(sc.getAccountNumber());
+    dto.setAccountName(sc.getAccountName());
+    dto.setPhoneNumber(sc.getPhoneNumber());
+    dto.setEmailAddress(sc.getEmailAddress());
+    dto.setIdNumber(sc.getIdNumber());
+    dto.setCustId(sc.getCustId());
+    dto.setRemark(sc.getRemark());
+    dto.setDeleteRemark(sc.getDeleteRemark());
+    dto.setShortCode(sc.getShortCode());
+    dto.setSequenceNumber(sc.getSequenceNumber());
+
+    dto.setDateInitiated(
+            sc.getDateInitiated() != null
+                    ? sc.getDateInitiated().toString()
+                    : null);
+
+    dto.setDateApproved(
+            sc.getDateApproved() != null
+                    ? sc.getDateApproved().toString()
+                    : null);
+
+    dto.setApproved(sc.isApproved());
+    dto.setDeleteInitiated(sc.isDeleteInitiated());
+    dto.setDeleted(sc.isDeleted());
+
+    return dto;
 	}
 }
