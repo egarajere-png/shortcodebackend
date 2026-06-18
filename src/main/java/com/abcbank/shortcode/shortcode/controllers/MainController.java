@@ -26,6 +26,7 @@ import com.abcbank.shortcode.shortcode.entities.DTOApproval;
 import com.abcbank.shortcode.shortcode.entities.DTOResponse;
 import com.abcbank.shortcode.shortcode.entities.DTOShortCode;
 import com.abcbank.shortcode.shortcode.entities.ShortCode;
+import com.abcbank.shortcode.shortcode.middleware.AuditTrailService;
 import com.abcbank.shortcode.shortcode.middleware.FinacleData;
 import com.abcbank.shortcode.shortcode.middleware.ShortCodeService;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
@@ -57,6 +58,9 @@ public class MainController {
 	
 	@Autowired
 	UtilController utilController;
+
+	@Autowired
+	private AuditTrailService auditTrailService;
 
 	@GetMapping("/validate/{accountNumber}")
 	@RolesAllowed({ "apicaller", "maker", "checker" })
@@ -133,6 +137,11 @@ public class MainController {
 			response.setStatusCode("000");
 			response.setShortCode(shortCodeInInt);
 			response.setMessage("Short code request initiated successfully");
+			auditTrailService.logAction(
+       			 shortCode,
+       			"INITIATE",
+       			 shortCode.getInitiator(),
+        		"Shortcode request initiated");
 		} else {
 			response.setStatusCode("104");
 			response.setMessage("Request not initiated, error occured");
@@ -171,6 +180,11 @@ public class MainController {
 			response.setShortCode(shortCode.getShortCode());
 			response.setMessage("Shortcode successfully generated");
 		}
+		auditTrailService.logAction(
+        shortCode,
+        "APPROVE",
+        request.getApprover(),
+        "Shortcode approved");
 		return response;
 	}
 
@@ -203,6 +217,11 @@ public class MainController {
 		if (shortCode.getId() > 0) {
 			response.setStatusCode("000");
 			shortCodeRepo.save(shortCode);
+			auditTrailService.logAction(
+        		shortCode,
+        		"DELETE_REQUEST",
+       			shortCode.getInitiator(),
+       			request.getDeleteRemark());
 		} else {
 			response.setStatusCode("104");
 			response.setMessage("Request not completed, error occured");
@@ -238,6 +257,11 @@ public class MainController {
 		if (shortCode.getId() > 0) {
 			response.setStatusCode("000");
 			shortCodeRepo.save(shortCode);
+			auditTrailService.logAction(
+    		shortCode,
+        	"DELETE_APPROVE",
+        	request.getAccountNumber(),
+        	"Deletion approved");
 		} else {
 			response.setStatusCode("104");
 			response.setMessage("Request not completed, error occured");
