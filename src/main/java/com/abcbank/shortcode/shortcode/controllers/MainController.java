@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+
 import javax.annotation.security.RolesAllowed;
 
 import org.json.JSONObject;
@@ -29,16 +30,22 @@ import com.abcbank.shortcode.shortcode.middleware.FinacleData;
 import com.abcbank.shortcode.shortcode.middleware.ShortCodeService;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
 import com.abcbank.shortcode.shortcode.utils.HTTPSClient;
+import com.abcbank.shortcode.shortcode.utils.ShortCodeMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
+
 @RequestMapping("/shortcodes/api")
 public class MainController {
 
 	@Value("${service.params.finquery.host}")
 	private String finqueryHost;
+
+	@Autowired
+	private ShortCodeMapper shortCodeMapper;
+
 	@Autowired
 	ShortCodeRepo shortCodeRepo;
 	
@@ -241,51 +248,46 @@ public class MainController {
 	@GetMapping("/pending")
 	@ResponseBody
 	public List<ShortCodeDto> getPending() {
-    List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(false);
-    List<ShortCodeDto> resultList = new ArrayList<>();
-    for (ShortCode sc : shortCodeList) {
-        resultList.add(convertToDto(sc));
-    }
 
-    return resultList;
+    return shortCodeRepo.findByApproved(false)
+            .stream()
+            .map(shortCodeMapper::toDto)
+            .toList();
 }
 	
 	@GetMapping("/approved")
 	@ResponseBody
 	public List<ShortCodeDto> getApproved() {
-    List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(true);
-    List<ShortCodeDto> resultList = new ArrayList<>();
-    for (ShortCode sc : shortCodeList) {
-        resultList.add(convertToDto(sc));
-    }
 
-    return resultList;
+    return shortCodeRepo.findByApproved(true)
+            .stream()
+            .map(shortCodeMapper::toDto)
+            .toList();
 }
 
 	@GetMapping("/pending-delete")
 	@ResponseBody
 	public List<ShortCodeDto> getPendingDelete() {
-    List<ShortCode> shortCodeList = shortCodeRepo.findByDeleteInitiatedAndDeleted(true, false);
-    log.info(" ===================== Pending delete: {}", shortCodeList);
-    List<ShortCodeDto> resultList = new ArrayList<>();
-    for (ShortCode sc : shortCodeList) {
-        resultList.add(convertToDto(sc));
-    }
 
-    return resultList;
+    List<ShortCode> shortCodeList =
+            shortCodeRepo.findByDeleteInitiatedAndDeleted(true, false);
+    log.info("Pending delete requests: {}", shortCodeList.size());
+    return shortCodeList.stream()
+            .map(shortCodeMapper::toDto)
+            .toList();
 }
 
 	@GetMapping("/get-shortcodes/{accountNumber}")
 	@ResponseBody
 	public List<ShortCodeDto> getPending(@PathVariable String accountNumber) {
-    List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
-    List<ShortCodeDto> resultList = new ArrayList<>();
-    for (ShortCode sc : shortCodeList) {
-        resultList.add(convertToDto(sc));
-    }
 
-    return resultList;
+    return shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber)
+            .stream()
+            .map(shortCodeMapper::toDto)
+            .toList();
 }
+
+
 	@GetMapping("/get-account/{shortCodeNumber}")
 	public String getAccount(@PathVariable int shortCodeNumber) {
 		try {
