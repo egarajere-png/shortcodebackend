@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+
 import javax.annotation.security.RolesAllowed;
 
 import org.json.JSONObject;
@@ -25,20 +26,27 @@ import com.abcbank.shortcode.shortcode.entities.DTOApproval;
 import com.abcbank.shortcode.shortcode.entities.DTOResponse;
 import com.abcbank.shortcode.shortcode.entities.DTOShortCode;
 import com.abcbank.shortcode.shortcode.entities.ShortCode;
+import com.abcbank.shortcode.shortcode.middleware.AuditTrailService;
 import com.abcbank.shortcode.shortcode.middleware.FinacleData;
 import com.abcbank.shortcode.shortcode.middleware.ShortCodeService;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
 import com.abcbank.shortcode.shortcode.utils.HTTPSClient;
+import com.abcbank.shortcode.shortcode.utils.ShortCodeMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
+
 @RequestMapping("/shortcodes/api")
 public class MainController {
 
 	@Value("${service.params.finquery.host}")
 	private String finqueryHost;
+
+	@Autowired
+	private ShortCodeMapper shortCodeMapper;
+
 	@Autowired
 	ShortCodeRepo shortCodeRepo;
 	
@@ -50,6 +58,9 @@ public class MainController {
 	
 	@Autowired
 	UtilController utilController;
+
+	@Autowired
+	private AuditTrailService auditTrailService;
 
 	@GetMapping("/validate/{accountNumber}")
 	@RolesAllowed({ "apicaller", "maker", "checker" })
@@ -126,6 +137,11 @@ public class MainController {
 			response.setStatusCode("000");
 			response.setShortCode(shortCodeInInt);
 			response.setMessage("Short code request initiated successfully");
+			auditTrailService.logAction(
+       			 shortCode,
+       			"INITIATE",
+       			 shortCode.getInitiator(),
+        		"Shortcode request initiated");
 		} else {
 			response.setStatusCode("104");
 			response.setMessage("Request not initiated, error occured");
@@ -164,6 +180,11 @@ public class MainController {
 			response.setShortCode(shortCode.getShortCode());
 			response.setMessage("Shortcode successfully generated");
 		}
+		auditTrailService.logAction(
+        shortCode,
+        "APPROVE",
+        request.getApprover(),
+        "Shortcode approved");
 		return response;
 	}
 
@@ -196,6 +217,11 @@ public class MainController {
 		if (shortCode.getId() > 0) {
 			response.setStatusCode("000");
 			shortCodeRepo.save(shortCode);
+			auditTrailService.logAction(
+        		shortCode,
+        		"DELETE_REQUEST",
+       			shortCode.getInitiator(),
+       			request.getDeleteRemark());
 		} else {
 			response.setStatusCode("104");
 			response.setMessage("Request not completed, error occured");
@@ -231,6 +257,11 @@ public class MainController {
 		if (shortCode.getId() > 0) {
 			response.setStatusCode("000");
 			shortCodeRepo.save(shortCode);
+			auditTrailService.logAction(
+    		shortCode,
+        	"DELETE_APPROVE",
+        	request.getAccountNumber(),
+        	"Deletion approved");
 		} else {
 			response.setStatusCode("104");
 			response.setMessage("Request not completed, error occured");
@@ -241,103 +272,45 @@ public class MainController {
 	@GetMapping("/pending")
 	@ResponseBody
 	public List<ShortCodeDto> getPending() {
-		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(false);
-		List<ShortCodeDto> resultList = new ArrayList<>();
-		for(ShortCode sc : shortCodeList) {
-			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(sc.getDateApproved().toString());
-			dto.setDateInitiated(sc.getDateInitiated().toString());
-			dto.setInitiator(sc.getInitiator());
-			dto.setAccountName(sc.getAccountName());
-			dto.setAccountNumber(sc.getAccountNumber());
-			dto.setApproved(sc.isApproved());
-			dto.setApprover(sc.getApprover());
-			dto.setCustId(sc.getCustId());
-			dto.setDeleted(sc.isDeleted());
-			dto.setEmailAddress(sc.getEmailAddress());
-			dto.setId(sc.getId());
-			dto.setShortCode(sc.getShortCode());
-			resultList.add(dto);
-		}
-		
-		return resultList;
-	}
+
+    return shortCodeRepo.findByApproved(false)
+            .stream()
+            .map(shortCodeMapper::toDto)
+            .toList();
+}
 	
 	@GetMapping("/approved")
 	@ResponseBody
 	public List<ShortCodeDto> getApproved() {
-		List<ShortCode> shortCodeList = shortCodeRepo.findByApproved(true);
-		List<ShortCodeDto> resultList = new ArrayList<>();
-		for(ShortCode sc : shortCodeList) {
-			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(sc.getDateApproved().toString());
-			dto.setDateInitiated(sc.getDateInitiated().toString());
-			dto.setInitiator(sc.getInitiator());
-			dto.setAccountName(sc.getAccountName());
-			dto.setAccountNumber(sc.getAccountNumber());
-			dto.setApproved(sc.isApproved());
-			dto.setApprover(sc.getApprover());
-			dto.setCustId(sc.getCustId());
-			dto.setDeleted(sc.isDeleted());
-			dto.setEmailAddress(sc.getEmailAddress());
-			dto.setId(sc.getId());
-			dto.setShortCode(sc.getShortCode());
-			resultList.add(dto);
-		}
-		
-		return resultList;
-	}
+
+    return shortCodeRepo.findByApproved(true)
+            .stream()
+            .map(shortCodeMapper::toDto)
+            .toList();
+}
 
 	@GetMapping("/pending-delete")
 	@ResponseBody
 	public List<ShortCodeDto> getPendingDelete() {
-		List<ShortCode> shortCodeList = shortCodeRepo.findByDeleteInitiatedAndDeleted(true, false);
-		log.info(" ===================== Pending delete: {}", shortCodeList);
-		List<ShortCodeDto> resultList = new ArrayList<>();
-		for(ShortCode sc : shortCodeList) {
-			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(sc.getDateApproved().toString());
-			dto.setDateInitiated(sc.getDateInitiated().toString());
-			dto.setInitiator(sc.getInitiator());
-			dto.setAccountName(sc.getAccountName());
-			dto.setAccountNumber(sc.getAccountNumber());
-			dto.setApproved(sc.isApproved());
-			dto.setApprover(sc.getApprover());
-			dto.setCustId(sc.getCustId());
-			dto.setDeleted(sc.isDeleted());
-			dto.setEmailAddress(sc.getEmailAddress());
-			dto.setId(sc.getId());
-			dto.setShortCode(sc.getShortCode());
-			resultList.add(dto);
-		}
-		
-		return resultList;
-	}
+
+    List<ShortCode> shortCodeList =
+            shortCodeRepo.findByDeleteInitiatedAndDeleted(true, false);
+    log.info("Pending delete requests: {}", shortCodeList.size());
+    return shortCodeList.stream()
+            .map(shortCodeMapper::toDto)
+            .toList();
+}
 
 	@GetMapping("/get-shortcodes/{accountNumber}")
 	@ResponseBody
 	public List<ShortCodeDto> getPending(@PathVariable String accountNumber) {
-		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
-		List<ShortCodeDto> resultList = new ArrayList<>();
-		for(ShortCode sc : shortCodeList) {
-			ShortCodeDto dto = new ShortCodeDto();
-			dto.setDateApproved(sc.getDateApproved().toString());
-			dto.setDateInitiated(sc.getDateInitiated().toString());
-			dto.setInitiator(sc.getInitiator());
-			dto.setAccountName(sc.getAccountName());
-			dto.setAccountNumber(sc.getAccountNumber());
-			dto.setApproved(sc.isApproved());
-			dto.setApprover(sc.getApprover());
-			dto.setCustId(sc.getCustId());
-			dto.setDeleted(sc.isDeleted());
-			dto.setEmailAddress(sc.getEmailAddress());
-			dto.setId(sc.getId());
-			dto.setShortCode(sc.getShortCode());
-			resultList.add(dto);
-		}
-		
-		return resultList;
-	}
+
+    return shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber)
+            .stream()
+            .map(shortCodeMapper::toDto)
+            .toList();
+}
+
 
 	@GetMapping("/get-account/{shortCodeNumber}")
 	public String getAccount(@PathVariable int shortCodeNumber) {
@@ -373,5 +346,39 @@ public class MainController {
 			log.error("================ Error: {}", e.getMessage());
 		}
 		return new ShortCode();
+	}
+
+	private ShortCodeDto convertToDto(ShortCode sc) {
+    ShortCodeDto dto = new ShortCodeDto();
+
+    dto.setId(sc.getId());
+    dto.setInitiator(sc.getInitiator());
+    dto.setApprover(sc.getApprover());
+    dto.setAccountNumber(sc.getAccountNumber());
+    dto.setAccountName(sc.getAccountName());
+    dto.setPhoneNumber(sc.getPhoneNumber());
+    dto.setEmailAddress(sc.getEmailAddress());
+    dto.setIdNumber(sc.getIdNumber());
+    dto.setCustId(sc.getCustId());
+    dto.setRemark(sc.getRemark());
+    dto.setDeleteRemark(sc.getDeleteRemark());
+    dto.setShortCode(sc.getShortCode());
+    dto.setSequenceNumber(sc.getSequenceNumber());
+
+    dto.setDateInitiated(
+            sc.getDateInitiated() != null
+                    ? sc.getDateInitiated().toString()
+                    : null);
+
+    dto.setDateApproved(
+            sc.getDateApproved() != null
+                    ? sc.getDateApproved().toString()
+                    : null);
+
+    dto.setApproved(sc.isApproved());
+    dto.setDeleteInitiated(sc.isDeleteInitiated());
+    dto.setDeleted(sc.isDeleted());
+
+    return dto;
 	}
 }
