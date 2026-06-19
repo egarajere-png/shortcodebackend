@@ -32,6 +32,9 @@ import com.abcbank.shortcode.shortcode.middleware.ShortCodeService;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
 import com.abcbank.shortcode.shortcode.utils.HTTPSClient;
 import com.abcbank.shortcode.shortcode.utils.ShortCodeMapper;
+import com.abcbank.shortcode.shortcode.entities.AuditTrail;
+import com.abcbank.shortcode.shortcode.repo.AuditTrailRepo;
+import com.abcbank.shortcode.shortcode.dto.AuditTrailDto;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,6 +64,9 @@ public class MainController {
 
 	@Autowired
 	private AuditTrailService auditTrailService;
+
+	@Autowired
+	private AuditTrailRepo auditTrailRepo;
 
 	@GetMapping("/validate/{accountNumber}")
 	@RolesAllowed({ "apicaller", "maker", "checker" })
@@ -348,37 +354,29 @@ public class MainController {
 		return new ShortCode();
 	}
 
-	private ShortCodeDto convertToDto(ShortCode sc) {
-    ShortCodeDto dto = new ShortCodeDto();
+	@GetMapping("/audit/{shortCode}")
+	@ResponseBody
+	public List<AuditTrailDto> getAuditTrail(
+        @PathVariable Integer shortCode) {
 
-    dto.setId(sc.getId());
-    dto.setInitiator(sc.getInitiator());
-    dto.setApprover(sc.getApprover());
-    dto.setAccountNumber(sc.getAccountNumber());
-    dto.setAccountName(sc.getAccountName());
-    dto.setPhoneNumber(sc.getPhoneNumber());
-    dto.setEmailAddress(sc.getEmailAddress());
-    dto.setIdNumber(sc.getIdNumber());
-    dto.setCustId(sc.getCustId());
-    dto.setRemark(sc.getRemark());
-    dto.setDeleteRemark(sc.getDeleteRemark());
-    dto.setShortCode(sc.getShortCode());
-    dto.setSequenceNumber(sc.getSequenceNumber());
+    List<AuditTrail> auditList =
+            auditTrailRepo.findByShortCodeOrderByActionDateDesc(shortCode);
 
-    dto.setDateInitiated(
-            sc.getDateInitiated() != null
-                    ? sc.getDateInitiated().toString()
-                    : null);
+    return auditList.stream()
+            .map(audit -> {
+                AuditTrailDto dto = new AuditTrailDto();
 
-    dto.setDateApproved(
-            sc.getDateApproved() != null
-                    ? sc.getDateApproved().toString()
-                    : null);
+                dto.setAction(audit.getAction());
+                dto.setPerformedBy(audit.getPerformedBy());
+                dto.setRemarks(audit.getRemarks());
 
-    dto.setApproved(sc.isApproved());
-    dto.setDeleteInitiated(sc.isDeleteInitiated());
-    dto.setDeleted(sc.isDeleted());
+                dto.setActionDate(
+                        audit.getActionDate() != null
+                                ? audit.getActionDate().toString()
+                                : null);
 
-    return dto;
-	}
+                return dto;
+            })
+            .toList();
+}
 }

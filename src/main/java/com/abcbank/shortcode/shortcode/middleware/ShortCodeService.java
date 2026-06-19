@@ -48,28 +48,27 @@ public class ShortCodeService {
 			return true;
 		}
 	}
+public String generateHash(ShortCode shortCode) {
 
-	public String generateHash(ShortCode shortCode) {
-		ShortCode shortCode2 = new ShortCode();
-		shortCode2.setId(shortCode.getId());
-		shortCode2.setAccountNumber(shortCode.getAccountNumber());
-		shortCode2.setCustId(shortCode.getCustId());
-		shortCode2.setAccountName(shortCode.getAccountName());
-		shortCode2.setIdNumber(shortCode.getIdNumber());
-		shortCode2.setDateInitiated(shortCode.getDateInitiated());
-		shortCode2.setEmailAddress(shortCode.getEmailAddress());
-		shortCode2.setPhoneNumber(shortCode.getPhoneNumber());
-		shortCode2.setShortCode(shortCode.getShortCode());
-		shortCode2.setHash(null);
-		shortCode2.setInitiator(null);
-		shortCode2.setApprover(null);
-		shortCode2.setSequenceNumber(0);
-		shortCode2.setDateInitiated(null);
-		shortCode2.setDateApproved(null);
-		log.info("================ Shortcode for hash: {}", shortCode2);
-		String hashCode = Integer.toString(shortCode2.hashCode());
-		System.out.println(hashCode);
-		String hashed = hashing.hash256(hashCode);
-		return hashed;
-	}
+    String data = String.join("|",
+            String.valueOf(shortCode.getId()),
+            safe(shortCode.getAccountNumber()),
+            safe(shortCode.getCustId()),
+            safe(shortCode.getAccountName()),
+            safe(shortCode.getIdNumber()),
+            safe(shortCode.getEmailAddress()),
+            safe(shortCode.getPhoneNumber()),
+            String.valueOf(shortCode.getShortCode()),
+            String.valueOf(shortCode.isApproved()),
+            String.valueOf(shortCode.isDeleted())
+    );
+
+    log.info("Hash source data: {}", data);
+
+    return hashing.hash256(data);
+}
+
+private String safe(String value) {
+    return value == null ? "" : value.trim();
+}
 }

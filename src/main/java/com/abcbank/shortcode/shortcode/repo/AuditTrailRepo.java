@@ -11,4 +11,6 @@ public interface AuditTrailRepo extends JpaRepository<AuditTrail, Long> {
     List<AuditTrail> findByShortCodeIdOrderByActionDateDesc(Integer shortCodeId);
 
     List<AuditTrail> findByAccountNumberOrderByActionDateDesc(String accountNumber);
+
+    List<AuditTrail> findByShortCodeOrderByActionDateDesc(Integer shortCode);
 }
