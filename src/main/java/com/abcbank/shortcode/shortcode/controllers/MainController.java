@@ -485,7 +485,7 @@ public class MainController {
 		if (shortCode.getId() > 0) {
 			response.setStatusCode("000");
 			shortCodeRepo.save(shortCode);
-			
+
 			// Log deletion request for audit trail and non-repudiation
 			auditTrailService.logAction(
         		shortCode,
