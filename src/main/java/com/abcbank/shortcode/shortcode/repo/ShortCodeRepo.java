@@ -120,4 +120,5 @@ public interface ShortCodeRepo extends CrudRepository<ShortCode, Integer> {
 	 * @return the ShortCode entity if found, null otherwise
 	 */
 	ShortCode findByShortCode(int shortCode);
+	ShortCode findByAccountNumber(String accountNumber);
 }

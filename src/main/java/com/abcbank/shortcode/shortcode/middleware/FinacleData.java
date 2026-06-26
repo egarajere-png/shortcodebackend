@@ -73,7 +73,7 @@ public class FinacleData {
 	 */
 	public String fetchCBSShortCode(String accountNumber) {
 		// Build Finacle endpoint URL using configured host
-		String endpoint = "http://" + finqueryHost + "/api/finacle/short-code/" + accountNumber;
+		String endpoint = "http://" + finqueryHost + "/shortcodes/api/short-code/" + accountNumber;
 		
 		// Make HTTP GET request to Finacle and retrieve response as String
 		ResponseEntity<String> response = restTemplate.getForEntity(endpoint, String.class);

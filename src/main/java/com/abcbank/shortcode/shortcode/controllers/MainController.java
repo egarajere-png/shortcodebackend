@@ -258,7 +258,7 @@ public class MainController {
 	@ResponseBody
 	public DTOResponse initiate(@RequestBody ShortCode request) {
 		// Log request initiation with key details for audit purposes
-		log.info(" ========== About to initiate short code reqeust, account number: {}, name: {}",
+		log.info(" ========== About to initiate short code request, account number: {}, name: {}",
 				request.getAccountNumber(), request.getAccountName());
 		
 		// Query 1: Check if account already has an approved short code
@@ -798,4 +798,22 @@ public class MainController {
             })
             .toList();
 	}
+
+	@GetMapping("/short-code/{accountNumber}")
+	public String getShortCode(
+        @PathVariable String accountNumber) {
+
+    List<ShortCode> shortCodes =
+            shortCodeRepo.findByAccountNumberOrderByIdDesc(accountNumber);
+
+    if (shortCodes != null && !shortCodes.isEmpty()) {
+
+        return String.valueOf(
+                shortCodes.get(0).getShortCode()
+        );
+
+    }
+
+    return "";
+}
 }
