@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.abcbank.shortcode.shortcode.entities.AuditTrail;
 
+import org.springframework.data.domain.Pageable;
 /**
  * Spring Data JPA Repository for AuditTrail entity database operations.
  * 
@@ -69,4 +70,5 @@ public interface AuditTrailRepo extends JpaRepository<AuditTrail, Long> {
      * @return List of AuditTrail entries ordered by action date descending
      */
     List<AuditTrail> findByShortCodeOrderByActionDateDesc(Integer shortCode);
+    List<AuditTrail> findAllByOrderByActionDateDesc(Pageable pageable);
 }
