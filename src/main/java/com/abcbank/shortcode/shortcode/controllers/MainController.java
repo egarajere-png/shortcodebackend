@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.abcbank.shortcode.shortcode.dto.ShortCodeDto;
+import com.abcbank.shortcode.shortcode.dto.ShortCodeRegistryDto;
 import com.abcbank.shortcode.shortcode.entities.DTOAccount;
 import com.abcbank.shortcode.shortcode.entities.DTOApproval;
 import com.abcbank.shortcode.shortcode.entities.DTOResponse;
@@ -38,60 +39,7 @@ import com.abcbank.shortcode.shortcode.dto.AuditTrailDto;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Main REST Controller for Short Code Management Operations.
- * 
- * This controller is the primary entry point for all short code management APIs.
- * It implements a comprehensive Maker-Checker workflow with full audit trail logging,
- * data integrity validation, and regulatory compliance features.
- * 
- * Workflow Overview:
- * 1. INITIATE (Maker): Create short code request with customer details
- *    - Validate all required fields are present
- *    - Check for duplicate approved short codes for account
- *    - Check for pending approval requests
- *    - Assign short code value (format: 35XXXX)
- *    - Generate SHA-256 hash for integrity validation
- *    - Log action in audit trail
- * 
- * 2. APPROVE (Checker): Review and approve the short code
- *    - Verify integrity hash matches stored hash (tampering detection)
- *    - Set approver name and timestamp
- *    - Mark as approved and generate final hash
- *    - Generate PDF slip for customer
- *    - Send receipt email with attachment
- *    - Log action in audit trail
- * 
- * 3. DELETE REQUEST (Maker): Initiate short code deletion
- *    - Verify short code exists
- *    - Verify account number matches
- *    - Mark deletion as initiated
- *    - Store deletion remarks
- *    - Log action in audit trail
- * 
- * 4. APPROVE DELETE (Checker): Finalize short code deletion
- *    - Verify short code exists
- *    - Verify account number matches
- *    - Mark as deleted (soft delete)
- *    - Log action in audit trail
- * 
- * Security Features:
- * - Role-based access control (Maker, Checker, API Caller)
- * - SHA-256 hash-based integrity validation
- * - Finacle core banking system integration for account validation
- * - Audit trail for all operations (non-repudiation)
- * - Query methods for workflow state management
- * 
- * Integration Points:
- * - Finacle: Account validation and CBS short code lookup
- * - Keycloak: User authentication and role management
- * - Database: JPA repositories for data persistence
- * - Email: Receipt delivery to customers
- * - PDF Generation: Slip generation for customer records
- * 
- * @author ABC Bank Development Team
- * @version 1.0
- */
+
 @Slf4j
 @RestController
 @RequestMapping("/shortcodes/api")
@@ -154,30 +102,7 @@ public class MainController {
 	@Autowired
 	private AuditTrailRepo auditTrailRepo;
 
-	/**
-	 * Validates account information against the Finacle core banking system.
-	 * 
-	 * This method queries the Finacle integration endpoint to retrieve validated
-	 * account information including customer name, phone number, email, and
-	 * identification details. It is used during the initiation phase to ensure
-	 * that the account details are accurate before creating a short code request.
-	 * 
-	 * Finacle Integration:
-	 * - Sends HTTP request to Finacle query endpoint
-	 * - Retrieves account data in JSON format
-	 * - Handles missing optional fields gracefully
-	 * - Supports both national ID and passport number validation
-	 * 
-	 * Authorization:
-	 * - Accessible to API Caller, Maker, and Checker roles
-	 * - All users can validate accounts before submitting requests
-	 * 
-	 * @param accountNumber the bank account number to validate
-	 * @return DTOAccount with validated account information from Finacle,
-	 *         or empty DTOAccount if account not found or validation fails
-	 * 
-	 * @throws No exceptions are explicitly thrown; network errors are handled gracefully
-	 */
+	
 	@GetMapping("/validate/{accountNumber}")
 	@RolesAllowed({ "apicaller", "maker", "checker" })
 	public DTOAccount validate(@PathVariable String accountNumber) {
@@ -213,46 +138,7 @@ public class MainController {
 		return account;
 	}
 
-	/**
-	 * Initiates a new short code request (Maker action in Maker-Checker workflow).
-	 * 
-	 * Maker Workflow Step 1:
-	 * This method creates a new short code request with customer information.
-	 * The request is saved in pending state and assigned a unique short code value
-	 * based on the database record ID. A cryptographic hash is generated for
-	 * integrity validation during the approval phase.
-	 * 
-	 * Workflow Steps:
-	 * 1. Check if account already has an approved short code (only one per account)
-	 * 2. Validate that all required fields are present
-	 * 3. Check if a request for this account is already pending approval
-	 * 4. Save the initial request to the database
-	 * 5. Generate unique short code (format: 35 + 4-digit zero-padded ID)
-	 * 6. Compute SHA-256 hash for integrity validation
-	 * 7. Log action in audit trail for non-repudiation
-	 * 
-	 * Short Code Generation Logic:
-	 * - Format: "35" + String.format("%04d", record_id)
-	 * - Example: Record ID 1 → Short Code 350001
-	 * - Ensures unique, sequential assignment
-	 * 
-	 * Hash-Based Integrity:
-	 * - Includes: ID, Account Number, Customer ID, Account Name, ID Number,
-	 *   Email, Phone, Short Code Value, Approval Status, Deletion Status
-	 * - Used in approval phase to detect unauthorized modifications
-	 * 
-	 * Authorization:
-	 * - Restricted to Maker and API Caller roles
-	 * - Makers initiate requests for their branch/department
-	 * 
-	 * @param request the ShortCode entity with customer details
-	 * @return DTOResponse with status code, assigned short code, and status message
-	 *         Status Codes:
-	 *         - "000": Request initiated successfully
-	 *         - "101": Pending approval request exists for account
-	 *         - "103": Approved short code already exists for account
-	 *         - "104": Validation failed or database error
-	 */
+	
 	@PostMapping("/initiate")
 	@RolesAllowed({ "apicaller", "maker" })
 	@ResponseBody
@@ -329,47 +215,7 @@ public class MainController {
 		return response;
 	}
 
-	/**
-	 * Approves a pending short code request (Checker action in Maker-Checker workflow).
-	 * 
-	 * Checker Workflow Step 2:
-	 * This method reviews and approves a short code request from the Maker.
-	 * It performs critical integrity validation to ensure the request has not been
-	 * tampered with since the Maker initiated it. Upon approval, it updates the
-	 * request status, generates a receipt PDF, and sends it to the customer via email.
-	 * 
-	 * Approval Workflow Steps:
-	 * 1. Retrieve the most recent short code request for the account
-	 * 2. Verify integrity: Recalculate hash and compare with stored hash
-	 *    - If hashes don't match: REJECT (tampering detected, security alarm)
-	 * 3. Update record with approver name and approval timestamp
-	 * 4. Mark as approved = true
-	 * 5. Generate final hash with updated approval status
-	 * 6. Generate PDF slip for customer records
-	 * 7. Send receipt email with PDF attachment to customer
-	 * 8. Log action in audit trail
-	 * 
-	 * Integrity Validation:
-	 * - Critical Security Feature: Detects unauthorized modifications
-	 * - If hash mismatch occurs: Request is REJECTED with "Alarm: failed integrity check!"
-	 * - Provides forensic evidence of tampering attempts
-	 * - Ensures Checker receives the exact request from Maker
-	 * 
-	 * Receipt Generation:
-	 * - PDF slip created with short code details
-	 * - Sent to customer's registered email address
-	 * - Contains instructions for using the short code
-	 * 
-	 * Authorization:
-	 * - Restricted to Checker and API Caller roles
-	 * - Checkers review requests from Makers in other departments/branches
-	 * 
-	 * @param request the approval request containing account number and approver user ID
-	 * @return DTOResponse with status code, assigned short code, and status message
-	 *         Status Codes:
-	 *         - "000": Approved successfully
-	 *         - "104": Integrity check failed (tampering detected) or no pending request
-	 */
+	
 	@PostMapping("/approve")
 	@RolesAllowed({ "apicaller", "checker" })
 	@ResponseBody
@@ -424,36 +270,7 @@ public class MainController {
 		return response;
 	}
 
-	/**
-	 * Initiates deletion of an approved short code (Maker action in deletion workflow).
-	 * 
-	 * Maker Workflow Step 3 (Deletion):
-	 * This method initiates the process to delete an approved short code.
-	 * The deletion request is marked but not finalized until the Checker approves it,
-	 * implementing the same Maker-Checker safety mechanism.
-	 * 
-	 * Deletion Workflow Steps:
-	 * 1. Verify the short code exists in the system
-	 * 2. Verify the account number matches the request (authorization check)
-	 * 3. Mark deleteInitiated = true to indicate pending deletion approval
-	 * 4. Store deletion remarks provided by the Maker
-	 * 5. Log action in audit trail
-	 * 
-	 * Business Logic:
-	 * - Soft delete implementation: Records are marked as deleted, not physically removed
-	 * - Preserves audit trail: Historical records remain for compliance
-	 * - Requires checker approval: Same safety mechanism as creation workflow
-	 * 
-	 * Authorization:
-	 * - Restricted to Maker and API Caller roles
-	 * - Makers can delete short codes they or their department initiated
-	 * 
-	 * @param request contains the short code value, account number, and deletion remarks
-	 * @return DTOResponse with status code and status message
-	 *         Status Codes:
-	 *         - "000": Deletion initiated successfully, pending approval
-	 *         - "104": Short code not found or account number mismatch
-	 */
+	
 	@DeleteMapping("/delete")
 	@RolesAllowed({ "apicaller", "maker" })
 	@ResponseBody
@@ -499,35 +316,7 @@ public class MainController {
 		return response;
 	}
 
-	/**
-	 * Approves and finalizes deletion of a short code (Checker action in deletion workflow).
-	 * 
-	 * Checker Workflow Step 4 (Deletion Approval):
-	 * This method finalizes the deletion of a short code that the Maker initiated.
-	 * Once approved, the short code is marked as deleted and can no longer be used.
-	 * 
-	 * Deletion Finalization Steps:
-	 * 1. Verify the short code exists in the system
-	 * 2. Verify the account number matches the request (authorization check)
-	 * 3. Mark deleteInitiated = false and deleted = true
-	 * 4. Persist the deletion status
-	 * 5. Log action in audit trail
-	 * 
-	 * Soft Delete Implementation:
-	 * - Deleted records remain in database for audit purposes
-	 * - Approved short codes cannot be deleted without Checker approval
-	 * - Deletion history preserved in audit trail
-	 * 
-	 * Authorization:
-	 * - Restricted to Checker and API Caller roles
-	 * - Checkers from separate authority can approve deletions
-	 * 
-	 * @param request contains the short code value and account number to delete
-	 * @return DTOResponse with status code and status message
-	 *         Status Codes:
-	 *         - "000": Deletion approved and finalized successfully
-	 *         - "104": Short code not found or account number mismatch
-	 */
+	
 	@PostMapping("/approve-delete")
 	@RolesAllowed({ "apicaller", "checker" })
 	@ResponseBody
@@ -572,15 +361,7 @@ public class MainController {
 		return response;
 	}
 
-	/**
-	 * Retrieves all pending short code requests awaiting Checker approval.
-	 * 
-	 * Query Method:
-	 * Used by the front-end application to display pending requests that
-	 * Checkers need to review and approve. Shows all requests with approved=false.
-	 * 
-	 * @return List of ShortCodeDto for all unapproved requests, empty list if none
-	 */
+	
 	@GetMapping("/pending")
 	@ResponseBody
 	public List<ShortCodeDto> getPending() {
@@ -591,15 +372,7 @@ public class MainController {
             .toList();
 	}
 	
-	/**
-	 * Retrieves all approved short codes that are currently active.
-	 * 
-	 * Query Method:
-	 * Used to display approved and issued short codes. These are the active
-	 * short codes that customers are using for Mpesa paybill transactions.
-	 * 
-	 * @return List of ShortCodeDto for all approved requests, empty list if none
-	 */
+	
 	@GetMapping("/approved")
 	@ResponseBody
 	public List<ShortCodeDto> getApproved() {
@@ -610,15 +383,7 @@ public class MainController {
             .toList();
 	}
 
-	/**
-	 * Retrieves all short codes with pending deletion requests.
-	 * 
-	 * Query Method:
-	 * Used by Checkers to review deletion requests initiated by Makers.
-	 * Shows all requests with deleteInitiated=true and deleted=false (not yet finalized).
-	 * 
-	 * @return List of ShortCodeDto for all pending deletion requests, empty list if none
-	 */
+	
 	@GetMapping("/pending-delete")
 	@ResponseBody
 	public List<ShortCodeDto> getPendingDelete() {
@@ -631,16 +396,7 @@ public class MainController {
             .toList();
 	}
 
-	/**
-	 * Retrieves all short code requests for a specific account, ordered by recency.
-	 * 
-	 * Query Method:
-	 * Used to display the history of short code requests for a customer account.
-	 * Returns all requests (pending, approved, or deleted) in reverse chronological order.
-	 * 
-	 * @param accountNumber the bank account number to query
-	 * @return List of ShortCodeDto for the account, ordered newest first, empty list if none
-	 */
+	
 	@GetMapping("/get-shortcodes/{accountNumber}")
 	@ResponseBody
 	public List<ShortCodeDto> getPending(@PathVariable String accountNumber) {
@@ -651,29 +407,7 @@ public class MainController {
             .toList();
 	}
 
-	/**
-	 * Retrieves the account number associated with a given short code.
-	 * 
-	 * Lookup Method with Integrity Validation:
-	 * Used by external systems (e.g., payment switches) to validate and resolve
-	 * a short code to an account number. Includes hash-based integrity verification
-	 * to detect tampering and ensure the short code is still active (not deleted).
-	 * 
-	 * Validation Logic:
-	 * 1. Lookup short code record by numeric value
-	 * 2. Recalculate SHA-256 hash and compare with stored hash
-	 *    - Ensures record hasn't been tampered with
-	 * 3. Verify short code is not marked as deleted
-	 * 4. Return account number if all validations pass
-	 * 
-	 * Security:
-	 * - Hash mismatch returns null (treats as invalid)
-	 * - Deleted short codes return null (prevents use after deletion)
-	 * - Designed for use by payment processors
-	 * 
-	 * @param shortCodeNumber the numeric short code value to lookup
-	 * @return the account number if short code is valid and active, null if invalid/deleted
-	 */
+	
 	@GetMapping("/get-account/{shortCodeNumber}")
 	public String getAccount(@PathVariable int shortCodeNumber) {
 		try {
@@ -701,29 +435,7 @@ public class MainController {
 		}
 	}
 
-	/**
-	 * Retrieves detailed account and short code information with CBS validation.
-	 * 
-	 * Lookup Method with Finacle Validation:
-	 * Used to retrieve complete short code details with validation against the
-	 * Finacle core banking system (CBS). Ensures the short code is maintained
-	 * in both the application database and the CBS system.
-	 * 
-	 * Validation Logic:
-	 * 1. Lookup short code record in application database
-	 * 2. Query CBS (Finacle) for the short code maintained for this account
-	 * 3. Cross-validate: CBS short code must match application short code
-	 * 4. Return detailed short code information if validation passes
-	 * 
-	 * Integration:
-	 * - Ensures data consistency between application and CBS
-	 * - Detects discrepancies that may indicate data synchronization issues
-	 * - Used for account lookup operations and payment processing validation
-	 * 
-	 * @param shortCode the numeric short code value to lookup
-	 * @return ShortCode entity with full details if valid and CBS-validated,
-	 *         empty ShortCode if not found or CBS validation fails
-	 */
+	
 	@GetMapping("/get-account-details/{shortCode}")
 	public ShortCode getAccountDetails(@PathVariable int shortCode) {
 		try {
@@ -748,28 +460,6 @@ public class MainController {
 		return new ShortCode();
 	}
 
-	/**
-	 * Retrieves the complete audit trail for a specific short code.
-	 * 
-	 * Audit Trail Query:
-	 * Returns all actions performed on a short code in reverse chronological order.
-	 * Used for compliance, investigation, and customer dispute resolution.
-	 * 
-	 * Audit Information:
-	 * - Action type (INITIATE, APPROVE, DELETE_REQUEST, DELETE_APPROVE)
-	 * - User who performed the action (Maker or Checker ID)
-	 * - Timestamp when the action was performed
-	 * - Optional remarks or comments about the action
-	 * 
-	 * Regulatory Use:
-	 * - Proves who performed each action and when (non-repudiation)
-	 * - Complete record of short code lifecycle
-	 * - Evidence for fraud investigation and compliance reporting
-	 * 
-	 * @param shortCode the numeric short code value to audit
-	 * @return List of AuditTrailDto showing all actions on the short code,
-	 *         ordered from newest to oldest, empty list if short code not found
-	 */
 	@GetMapping("/audit/{shortCode}")
 	@ResponseBody
 	public List<AuditTrailDto> getAuditTrail(
@@ -815,5 +505,40 @@ public class MainController {
     }
 
     return "";
+	}
+
+	@GetMapping("/registry")
+	@ResponseBody
+	public List<ShortCodeRegistryDto> getRegistry() {
+
+    return shortCodeRepo.findAll()
+            .stream()
+            .map(sc -> {
+
+                ShortCodeRegistryDto dto =
+                        new ShortCodeRegistryDto();
+
+                dto.setShortCode(sc.getShortCode());
+                dto.setAccountNumber(sc.getAccountNumber());
+                dto.setAccountName(sc.getAccountName());
+                dto.setPhoneNumber(sc.getPhoneNumber());
+                dto.setEmailAddress(sc.getEmailAddress());
+
+                dto.setApproved(sc.isApproved());
+                dto.setDeleted(sc.isDeleted());
+
+                dto.setDateInitiated(
+                        sc.getDateInitiated() != null
+                                ? sc.getDateInitiated().toString()
+                                : null);
+
+                dto.setDateApproved(
+                        sc.getDateApproved() != null
+                                ? sc.getDateApproved().toString()
+                                : null);
+
+                return dto;
+            })
+            .toList();
 }
 }
