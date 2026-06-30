@@ -23,6 +23,10 @@ public interface ShortCodeRepo extends CrudRepository<ShortCode, Integer> {
 
     List<ShortCode> findByAccountNumberAndApproved(String accountNumber, boolean approved);
 
+    List<ShortCode> findByApprovedAndDeleted(boolean approved, boolean deleted);
+
+    List<ShortCode> findByDeletedOrderByIdDesc(boolean deleted);
+
     List<ShortCode> findByAccountNumberAndApprovedAndDeleted(
             String accountNumber,
             boolean approved,
