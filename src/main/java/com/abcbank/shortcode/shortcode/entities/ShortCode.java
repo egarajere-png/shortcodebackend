@@ -114,6 +114,13 @@ public class ShortCode {
 	 * Generated from the record ID: "35" + zero-padded 4-digit ID
 	 */
 	private int shortCode;
+	
+	/**
+	 * Optional customer preferred shortcode.
+	 * Must be exactly 6 digits if provided.
+	 */
+	@Column(nullable = true, unique = true)
+	private Integer preferredShortCode;
 
 	/**
 	 * Sequence number used to track the order of approved short codes for a customer.

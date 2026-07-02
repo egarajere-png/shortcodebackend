@@ -80,4 +80,8 @@ public class ShortCodeDto {
 
     /** Flag indicating the short code has been deleted (false = active, true = deleted) */
     private boolean deleted = false;
+
+    private Integer preferredShortCode;
+
+    private String status;
 }
