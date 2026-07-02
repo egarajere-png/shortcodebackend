@@ -38,7 +38,14 @@ public interface ShortCodeRepo extends CrudRepository<ShortCode, Integer> {
 
     ShortCode findByShortCode(int shortCode);
 
+    boolean existsByPreferredShortCode(Integer preferredShortCode);
+    
+    ShortCode findByPreferredShortCode(Integer preferredShortCode);
+
     ShortCode findByAccountNumber(String accountNumber);
+
+    boolean existsByShortCode(int shortCode);
+    
 
     /*
      * ===========================================================

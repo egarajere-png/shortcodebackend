@@ -36,6 +36,7 @@ import com.abcbank.shortcode.shortcode.utils.ShortCodeMapper;
 import com.abcbank.shortcode.shortcode.entities.AuditTrail;
 import com.abcbank.shortcode.shortcode.repo.AuditTrailRepo;
 import com.abcbank.shortcode.shortcode.dto.AuditTrailDto;
+// import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,6 +46,21 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/shortcodes/api")
 public class MainController {
 
+	// This is for the reserved numbers that cannot be used as a short code. 
+	// These are hardcoded to prevent conflicts with special codes or test values.
+	private static final java.util.Set<Integer> RESERVED_SHORTCODES = java.util.Set.of(
+        0,
+        111111,
+        123456,
+        222222,
+        333333,
+        444444,
+        555555,
+        666666,
+        777777,
+        888888,
+        999999
+);
 	/**
 	 * Finacle query server host configuration.
 	 * Used to resolve Finacle integration endpoint URLs for account validation
@@ -140,81 +156,124 @@ public class MainController {
 
 	
 	@PostMapping("/initiate")
-	@RolesAllowed({ "apicaller", "maker" })
-	@ResponseBody
-	public DTOResponse initiate(@RequestBody ShortCode request) {
-		// Log request initiation with key details for audit purposes
-		log.info(" ========== About to initiate short code request, account number: {}, name: {}",
-				request.getAccountNumber(), request.getAccountName());
-		
-		// Query 1: Check if account already has an approved short code
-		// Business Rule: Only one approved short code per account
-		List<ShortCode> list = shortCodeRepo.findByAccountNumberAndApprovedAndDeleted(request.getAccountNumber(), true, false);
-		DTOResponse response = new DTOResponse();
-		if (list.size() > 0) {
-			int shortCodeValue = list.get(0).getShortCode();
-			log.info(" ================ Account existing, short code: {}", shortCodeValue);
-			response.setStatusCode("103");
-			response.setMessage("Shortcode is already granted for the account");
-			return response;
-		}
-		
-		// Mark as not approved initially (pending checker approval)
-		request.setApproved(false);
+@RolesAllowed({ "apicaller", "maker" })
+@ResponseBody
+public DTOResponse initiate(@RequestBody ShortCode request) {
 
-		// Validate that all required fields are present
-		if (shortCodeService.validateRequest(request) == false) {
-			response.setStatusCode("104");
-			response.setMessage("Some details are missing in the request");
-			return response;
-		}
+    log.info(" ========== About to initiate short code request, account number: {}, name: {}",
+            request.getAccountNumber(), request.getAccountName());
 
-		// Query 2: Check for pending approval requests for this account
-		// Business Rule: Only one request can be pending approval at a time
-		List<ShortCode> shortCodeList = shortCodeRepo.findByAccountNumberAndApproved(request.getAccountNumber(), false);
+    DTOResponse response = new DTOResponse();
 
-		if (shortCodeList.size() > 0) {
-			response.setStatusCode("101");
-			response.setMessage("There is a short code request for this account pending approval");
-			return response;
-		}
-		
-		// Record the timestamp of request initiation
-		request.setDateInitiated(LocalDateTime.now());
+    // Check if account already has an approved shortcode
+    List<ShortCode> list =
+            shortCodeRepo.findByAccountNumberAndApprovedAndDeleted(
+                    request.getAccountNumber(),
+                    true,
+                    false);
 
-		// Save the request to database to obtain auto-generated ID
-		ShortCode shortCode = shortCodeRepo.save(request);
+    if (!list.isEmpty()) {
 
-		// Generate unique short code value: "35" + 4-digit zero-padded ID
-		String shortCodeValue = "35" + String.format("%04d", shortCode.getId());
-		int shortCodeInInt = Integer.parseInt(shortCodeValue);
-		shortCode.setShortCode(shortCodeInInt);
-		
-		// Verify successful save (ID should be greater than 0)
-		if (shortCode.getId() > 0) {
-			// Generate initial integrity hash for this request
-			String hash = shortCodeService.generateHash(shortCode);
-			shortCode.setHash(hash);
-			
-			// Save short code with assigned value and hash
-			shortCodeRepo.save(request);
-			response.setStatusCode("000");
-			response.setShortCode(shortCodeInInt);
-			response.setMessage("Short code request initiated successfully");
-			
-			// Log action for audit trail and non-repudiation
-			auditTrailService.logAction(
-       			 shortCode,
-       			"INITIATE",
-       			 shortCode.getInitiator(),
-        		"Shortcode request initiated");
-		} else {
-			response.setStatusCode("104");
-			response.setMessage("Request not initiated, error occured");
-		}
-		return response;
-	}
+        response.setStatusCode("103");
+        response.setMessage("Shortcode is already granted for the account");
+        return response;
+    }
 
+    request.setApproved(false);
+
+    if (!shortCodeService.validateRequest(request)) {
+
+        response.setStatusCode("104");
+        response.setMessage("Some details are missing in the request");
+        return response;
+    }
+
+    List<ShortCode> pending =
+            shortCodeRepo.findByAccountNumberAndApproved(
+                    request.getAccountNumber(),
+                    false);
+
+    if (!pending.isEmpty()) {
+
+        response.setStatusCode("101");
+        response.setMessage("There is a shortcode request pending approval.");
+        return response;
+    }
+
+    /*
+     * ===================================================
+     * Validate preferred shortcode BEFORE saving
+     * ===================================================
+     */
+
+    if (request.getShortCode() > 0) {
+
+        int preferred = request.getShortCode();
+
+        if (preferred < 100000 || preferred > 999999) {
+
+            response.setStatusCode("104");
+            response.setMessage("Preferred shortcode must be exactly 6 digits.");
+            return response;
+        }
+
+        if (RESERVED_SHORTCODES.contains(preferred)) {
+
+            response.setStatusCode("104");
+            response.setMessage("Selected shortcode is reserved.");
+            return response;
+        }
+
+        if (shortCodeRepo.existsByShortCode(preferred)) {
+
+            response.setStatusCode("104");
+            response.setMessage("Selected shortcode is already taken.");
+            return response;
+        }
+
+    }
+
+    request.setDateInitiated(LocalDateTime.now());
+
+    /*
+     * Save AFTER all validations
+     */
+    ShortCode shortCode = shortCodeRepo.save(request);
+
+    int finalShortCode;
+
+    if (request.getShortCode() > 0) {
+
+        finalShortCode = request.getShortCode();
+
+    } else {
+
+        String generated =
+                "35" + String.format("%04d", shortCode.getId());
+
+        finalShortCode = Integer.parseInt(generated);
+
+    }
+
+    shortCode.setShortCode(finalShortCode);
+
+    String hash = shortCodeService.generateHash(shortCode);
+    shortCode.setHash(hash);
+
+    shortCodeRepo.save(shortCode);
+
+    response.setStatusCode("000");
+    response.setShortCode(finalShortCode);
+    response.setMessage("Shortcode request initiated successfully");
+
+    auditTrailService.logAction(
+            shortCode,
+            "INITIATE",
+            shortCode.getInitiator(),
+            "Shortcode request initiated");
+
+    return response;
+}
 	
 	@PostMapping("/approve")
 	@RolesAllowed({ "apicaller", "checker" })
@@ -318,7 +377,7 @@ public class MainController {
 
 	
 	@PostMapping("/approve-delete")
-	@RolesAllowed({ "apicaller", "checker" })
+	// @RolesAllowed({ "apicaller", "checker" })
 	@ResponseBody
 	public DTOResponse approveDelete(@RequestBody DTOShortCode request) {
 		DTOResponse response = new DTOResponse();
@@ -363,6 +422,7 @@ public class MainController {
 
 	
 	@GetMapping("/pending")
+	// @RolesAllowed({"checker", "apicaller"})
 	@ResponseBody
 	public List<ShortCodeDto> getPending() {
 		// Query for all unapproved short code requests
@@ -374,6 +434,7 @@ public class MainController {
 	
 	
 	@GetMapping("/approved")
+	// @RolesAllowed({"checker", "apicaller"})
 	@ResponseBody
 	public List<ShortCodeDto> getApproved() {
 		// Query for all approved short code requests
@@ -385,6 +446,7 @@ public class MainController {
 
 	
 	@GetMapping("/pending-delete")
+	// @RolesAllowed({"checker", "apicaller"})
 	@ResponseBody
 	public List<ShortCodeDto> getPendingDelete() {
 		// Query for all deletion requests pending Checker approval
@@ -398,6 +460,7 @@ public class MainController {
 
 	
 	@GetMapping("/get-shortcodes/{accountNumber}")
+	// @RolesAllowed({"maker","checker","apicaller"})
 	@ResponseBody
 	public List<ShortCodeDto> getPending(@PathVariable String accountNumber) {
 		// Query all short code requests for account, ordered by newest first
@@ -409,6 +472,7 @@ public class MainController {
 
 	
 	@GetMapping("/get-account/{shortCodeNumber}")
+	// @RolesAllowed({"checker","apicaller"})
 	public String getAccount(@PathVariable int shortCodeNumber) {
 		try {
 			// Lookup short code by numeric value
@@ -437,6 +501,7 @@ public class MainController {
 
 	
 	@GetMapping("/get-account-details/{shortCode}")
+	// @RolesAllowed({"maker","checker","apicaller"})
 	public ShortCode getAccountDetails(@PathVariable int shortCode) {
 		try {
 			// Lookup short code in application database
@@ -461,6 +526,7 @@ public class MainController {
 	}
 
 	@GetMapping("/audit/{shortCode}")
+	// @RolesAllowed({"checker","apicaller"})
 	@ResponseBody
 	public List<AuditTrailDto> getAuditTrail(
         @PathVariable Integer shortCode) {
@@ -490,6 +556,7 @@ public class MainController {
 	}
 
 	@GetMapping("/short-code/{accountNumber}")
+	// @RolesAllowed({"maker","checker","apicaller"})
 	public String getShortCode(
         @PathVariable String accountNumber) {
 
@@ -508,6 +575,7 @@ public class MainController {
 	}
 
 	@GetMapping("/registry")
+	// @RolesAllowed({"checker","apicaller"})
 	@ResponseBody
 	public List<ShortCodeRegistryDto> getRegistry() {
 
@@ -525,7 +593,8 @@ public class MainController {
                 dto.setEmailAddress(sc.getEmailAddress());
 
                 dto.setApproved(sc.isApproved());
-                dto.setDeleted(sc.isDeleted());
+				dto.setDeleted(sc.isDeleted());
+				dto.setDeleteInitiated(sc.isDeleteInitiated());
 
                 dto.setDateInitiated(
                         sc.getDateInitiated() != null
@@ -536,9 +605,66 @@ public class MainController {
                         sc.getDateApproved() != null
                                 ? sc.getDateApproved().toString()
                                 : null);
+						
+			
+					if (sc.isDeleted()) {
+    				dto.setStatus("Deleted");
+					} 
+					else if (sc.isDeleteInitiated()) {
+   						 dto.setStatus("Pending Deletion");
+} else if (!sc.isApproved()) {
+    dto.setStatus("Pending Approval");
+} else {
+    dto.setStatus("Active");
+}
 
                 return dto;
             })
             .toList();
+}
+
+@GetMapping("/check-shortcode/{shortCode}")
+// @RolesAllowed({"maker","apicaller"})
+@ResponseBody
+public DTOResponse checkShortCode(
+        @PathVariable int shortCode) {
+
+    DTOResponse response = new DTOResponse();
+
+    // Must be exactly 6 digits
+    if (shortCode < 100000 || shortCode > 999999) {
+
+        response.setStatusCode("104");
+        response.setAvailable(false);
+        response.setMessage("Shortcode must be exactly 6 digits.");
+
+        return response;
+    }
+
+    // Reserved
+    if (RESERVED_SHORTCODES.contains(shortCode)) {
+
+        response.setStatusCode("102");
+        response.setAvailable(false);
+        response.setMessage("Reserved shortcode.");
+
+        return response;
+    }
+
+    // Already exists
+    if (shortCodeRepo.existsByShortCode(shortCode)) {
+
+        response.setStatusCode("101");
+        response.setAvailable(false);
+        response.setMessage("Shortcode already taken.");
+
+        return response;
+    }
+
+    response.setStatusCode("000");
+    response.setAvailable(true);
+    response.setMessage("Shortcode available.");
+
+    return response;
 }
 }

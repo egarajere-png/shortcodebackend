@@ -47,4 +47,6 @@ public class DTOResponse {
      * For failure: Description of what went wrong and recovery steps
      */
     private String message;
+
+    private boolean available;
 }

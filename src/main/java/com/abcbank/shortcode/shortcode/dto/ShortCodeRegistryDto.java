@@ -29,4 +29,8 @@ public class ShortCodeRegistryDto {
 
     private String dateApproved;
 
+    private boolean deleteInitiated;
+
+    private String status;
+
 }

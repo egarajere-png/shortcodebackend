@@ -76,6 +76,7 @@ public class ShortCodeMapper {
 
 		// Map short code details
         dto.setShortCode(sc.getShortCode());
+        dto.setPreferredShortCode(sc.getPreferredShortCode());
         dto.setSequenceNumber(sc.getSequenceNumber());
 
 		// Map timestamps with null-safe conversion to String format
@@ -93,6 +94,16 @@ public class ShortCodeMapper {
         dto.setApproved(sc.isApproved());
         dto.setDeleteInitiated(sc.isDeleteInitiated());
         dto.setDeleted(sc.isDeleted());
+
+        if (sc.isDeleted()) {
+                dto.setStatus("Deleted");
+            } else if (sc.isDeleteInitiated()) {
+                dto.setStatus("Pending Deletion");
+            } else if (!sc.isApproved()) {
+                dto.setStatus("Pending Approval");
+            } else {
+                dto.setStatus("Active");
+            }
 
         return dto;
     }
