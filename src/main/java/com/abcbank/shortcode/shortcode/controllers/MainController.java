@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 
 
-import javax.annotation.security.RolesAllowed;
+import jakarta.annotation.security.RolesAllowed;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;

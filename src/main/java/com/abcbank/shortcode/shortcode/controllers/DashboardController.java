@@ -12,7 +12,7 @@ import com.abcbank.shortcode.shortcode.dto.DashboardAnalyticsDto;
 import com.abcbank.shortcode.shortcode.dto.RecentActivityDto;
 import com.abcbank.shortcode.shortcode.dto.WeeklySummaryDto;
 import com.abcbank.shortcode.shortcode.services.DashboardService;
-import javax.annotation.security.RolesAllowed;
+import jakarta.annotation.security.RolesAllowed;
 
 
 @RestController

@@ -46,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 public class AuthController {
-
+	
 	/**
 	 * Keycloak token endpoint URL from application configuration.
 	 * Typically: https://keycloak.example.com/auth/realms/shortcode/protocol/openid-connect/token
