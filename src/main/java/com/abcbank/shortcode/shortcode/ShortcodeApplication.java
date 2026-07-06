@@ -1,11 +1,11 @@
 package com.abcbank.shortcode.shortcode;
 
-import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
+// import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
+// import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
 
 /**
  * Main Spring Boot application class for the Short Code Generation System.
@@ -26,7 +26,7 @@ import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties
  * @version 1.0
  */
 @SpringBootApplication
-@EnableEncryptableProperties
+// @EnableEncryptableProperties
 public class ShortcodeApplication {
 
 	/**
@@ -47,8 +47,8 @@ public class ShortcodeApplication {
 	 * 
 	 * @return KeycloakSpringBootConfigResolver instance for Keycloak configuration resolution
 	 */
-	@Bean
-	public KeycloakSpringBootConfigResolver keycloakConfigResolver() {
-	    return new KeycloakSpringBootConfigResolver();
-	}
+	// @Bean
+// 	public KeycloakSpringBootConfigResolver keycloakConfigResolver() {
+// 	    return new KeycloakSpringBootConfigResolver();
+// 	}
 }

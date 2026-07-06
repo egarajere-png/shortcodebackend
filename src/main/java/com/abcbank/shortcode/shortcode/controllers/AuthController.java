@@ -11,6 +11,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import com.abcbank.shortcode.shortcode.entities.DTOAuthPayload;
@@ -45,6 +46,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RestController
+
+
 public class AuthController {
 	
 	/**
@@ -121,7 +124,8 @@ public class AuthController {
         map.add("password", authPayload.getPassword());
         map.add("grant_type", "password");
         
-        log.info("\n\n ============= : {}" + map);
+		log.info("Authentication Request: {}", map);
+
 
 		// Create HTTP entity with headers and body
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(map, headers);
@@ -134,11 +138,13 @@ public class AuthController {
                     DTOAuthPayloadResponse.class
             ).getBody();
         } catch (Exception exception) {
+
 			// Log authentication failures and return empty response
             log.info(exception.getLocalizedMessage());
             String responseError = exception.getLocalizedMessage().replace("400 Bad Request: ", "");
             log.error(responseError);
             return new DTOAuthPayloadResponse();
         }
+			
     }
 }

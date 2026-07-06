@@ -4,7 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.json.JSONObject;
+
 
 /**
  * Service for Finacle Core Banking System (CBS) integration.
@@ -73,7 +76,7 @@ public class FinacleData {
 	 */
 	public String fetchCBSShortCode(String accountNumber) {
 		// Build Finacle endpoint URL using configured host
-		String endpoint = "http://" + finqueryHost + "/shortcodes/api/short-code/" + accountNumber;
+		String endpoint = "http://" + finqueryHost + "/api/finacle/short-code/" + accountNumber;
 		
 		// Make HTTP GET request to Finacle and retrieve response as String
 		ResponseEntity<String> response = restTemplate.getForEntity(endpoint, String.class);
@@ -81,4 +84,17 @@ public class FinacleData {
 		// Return the short code value from the response body
 		return response.getBody();
 	}
+
+	public JSONObject fetchAccount(String accountNumber) {
+
+    String endpoint =
+            "http://" + finqueryHost +
+            "/api/finacle/account-data/" +
+            accountNumber;
+
+    ResponseEntity<String> response =
+            restTemplate.getForEntity(endpoint, String.class);
+
+    return new JSONObject(response.getBody());
+}
 }

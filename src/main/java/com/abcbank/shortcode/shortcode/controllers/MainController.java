@@ -1,8 +1,8 @@
 package com.abcbank.shortcode.shortcode.controllers;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
+// import java.util.ArrayList;
+// import java.util.HashMap;
 import java.util.List;
 
 
@@ -11,6 +11,7 @@ import jakarta.annotation.security.RolesAllowed;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.abcbank.shortcode.shortcode.dto.ShortCodeDto;
 import com.abcbank.shortcode.shortcode.dto.ShortCodeRegistryDto;
@@ -31,7 +33,7 @@ import com.abcbank.shortcode.shortcode.middleware.AuditTrailService;
 import com.abcbank.shortcode.shortcode.middleware.FinacleData;
 import com.abcbank.shortcode.shortcode.middleware.ShortCodeService;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
-import com.abcbank.shortcode.shortcode.utils.HTTPSClient;
+// import com.abcbank.shortcode.shortcode.utils.HTTPSClient;
 import com.abcbank.shortcode.shortcode.utils.ShortCodeMapper;
 import com.abcbank.shortcode.shortcode.entities.AuditTrail;
 import com.abcbank.shortcode.shortcode.repo.AuditTrailRepo;
@@ -61,14 +63,6 @@ public class MainController {
         888888,
         999999
 );
-	/**
-	 * Finacle query server host configuration.
-	 * Used to resolve Finacle integration endpoint URLs for account validation
-	 * and CBS short code lookups.
-	 */
-	@Value("${service.params.finquery.host}")
-	private String finqueryHost;
-
 	/**
 	 * Mapper for converting ShortCode entities to ShortCodeDto objects.
 	 * Used in query methods to transform database entities to API response objects.
@@ -118,47 +112,47 @@ public class MainController {
 	@Autowired
 	private AuditTrailRepo auditTrailRepo;
 
+	@Autowired
+	private RestTemplate restTemplate;
+
 	
 	@GetMapping("/validate/{accountNumber}")
-	@RolesAllowed({ "apicaller", "maker", "checker" })
+	@RolesAllowed({"apicaller","maker","checker"})
 	public DTOAccount validate(@PathVariable String accountNumber) {
-		// Build Finacle query endpoint URL using configured host
-		String url = "http://" + finqueryHost + "/api/finacle/account-data/" + accountNumber;
-		
-		// Send HTTP request to Finacle and retrieve account data
-		String response = HTTPSClient.sendHttpsRequest(url, "", "get", new HashMap<>(), "text");
-		JSONObject json = new JSONObject(response);
-		
-		// Extract optional identification fields with fallback handling
-		String idNumber = null;
-		String custId = null;
-		String passPortNumber = null;
-		try {idNumber = json.getString("idNumber");} catch(Exception e) {}
-		try {custId = json.getString("custId");} catch(Exception e) {}
-		try {passPortNumber = json.getString("ppNumber");} catch(Exception e) {}
-		
-		// Use national ID if available, otherwise use passport number
-		String idOrPasspord = idNumber != null ? idNumber : passPortNumber != null ? passPortNumber : "None";
-		
-		// Construct response DTO with validated account information
-		DTOAccount account = new DTOAccount();
-		if(custId != null) {
-			account.setAccountName(json.getString("accountName"));
-			account.setAccountNumber(json.getString("accountNumber"));
-			account.setCustId(custId);
-			account.setIdNumber(idOrPasspord);
-			try {account.setEmailAddress(json.getString("emailAddress"));} catch(Exception e) {}
-			account.setPhoneNumber(json.getString("phoneNumber"));
-			account.setAccountStatus(json.getString("status"));
-		}
-		return account;
-	}
+
+    JSONObject json = finacleData.fetchAccount(accountNumber);
+
+    String idNumber = json.optString("idNumber", null);
+    String custId = json.optString("custId", null);
+    String passport = json.optString("ppNumber", null);
+
+    String id = idNumber != null
+            ? idNumber
+            : passport != null
+                ? passport
+                : "None";
+
+    DTOAccount account = new DTOAccount();
+
+    if (custId != null) {
+
+        account.setAccountName(json.getString("accountName"));
+        account.setAccountNumber(json.getString("accountNumber"));
+        account.setCustId(custId);
+        account.setIdNumber(id);
+        account.setEmailAddress(json.optString("emailAddress", ""));
+        account.setPhoneNumber(json.getString("phoneNumber"));
+        account.setAccountStatus(json.getString("status"));
+    }
+
+    return account;
+}
 
 	
 	@PostMapping("/initiate")
-@RolesAllowed({ "apicaller", "maker" })
-@ResponseBody
-public DTOResponse initiate(@RequestBody ShortCode request) {
+	@RolesAllowed({ "apicaller", "maker" })
+	@ResponseBody
+	public DTOResponse initiate(@RequestBody ShortCode request) {
 
     log.info(" ========== About to initiate short code request, account number: {}, name: {}",
             request.getAccountNumber(), request.getAccountName());

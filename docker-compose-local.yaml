@@ -22,7 +22,7 @@ services:
     ports:
       - "8088:8088"
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: uat
       JASYPT_ENCRYPTOR_PASSWORD: jasyptkey
 
 volumes:
