@@ -115,7 +115,7 @@ public class MainController {
 	@Autowired
 	private RestTemplate restTemplate;
 
-	
+
 	@GetMapping("/validate/{accountNumber}")
 	@RolesAllowed({"apicaller","maker","checker"})
 	public DTOAccount validate(@PathVariable String accountNumber) {
@@ -495,29 +495,36 @@ public class MainController {
 
 	
 	@GetMapping("/get-account-details/{shortCode}")
-	// @RolesAllowed({"maker","checker","apicaller"})
-	public ShortCode getAccountDetails(@PathVariable int shortCode) {
-		try {
-			// Lookup short code in application database
-			ShortCode sc = shortCodeRepo.findByShortCode(shortCode);
-			log.info("================= shortcode: {}", sc);
-			
-			if(sc.getAccountNumber() != null) {
-				// Query CBS (Finacle) for the short code maintained for this account
-				String maintainedSC = finacleData.fetchCBSShortCode(sc.getAccountNumber());
-				log.info("================= maintainedSC: {}", maintainedSC);
-				
-				// Cross-validate: CBS short code must match application short code
-				if(maintainedSC.equals(Integer.toString(shortCode))) {
-					return sc;
-				}
-			}
-		} catch (Exception e) {
-			log.error("================ Error: {}", e.getMessage());
-		}
-		// Return empty record if not found or validation fails
-		return new ShortCode();
-	}
+// @RolesAllowed({"maker","checker","apicaller"})
+public ShortCode getAccountDetails(@PathVariable int shortCode) {
+
+    try {
+
+        // Lookup shortcode in application database
+        ShortCode sc = shortCodeRepo.findByShortCode(shortCode);
+
+        log.info("================= shortcode: {}", sc);
+
+        if (sc == null) {
+            return new ShortCode();
+        }
+
+        // Validate record integrity
+        String generatedHash = shortCodeService.generateHash(sc);
+
+        if (!generatedHash.equals(sc.getHash())) {
+            log.error("Hash mismatch detected for shortcode {}", shortCode);
+            return new ShortCode();
+        }
+
+        // Return the database record
+        return sc;
+
+    } catch (Exception e) {
+        log.error("Error retrieving shortcode details", e);
+        return new ShortCode();
+    }
+}
 
 	@GetMapping("/audit/{shortCode}")
 	// @RolesAllowed({"checker","apicaller"})

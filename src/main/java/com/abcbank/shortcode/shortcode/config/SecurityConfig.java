@@ -25,29 +25,42 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
+import org.springframework.http.HttpMethod;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(jsr250Enabled = true)
 public class SecurityConfig {
    
 @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())  
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                "/shortcodes/api/**",
-                "/public/api/v1/**",
-                "/v3/api-docs/**",
-                "/swagger-ui/**").permitAll()
-                .anyRequest().authenticated()
-                //.anyRequest().permitAll()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-            .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-            );
-        return http.build();
-    }
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+    http
+        .csrf(AbstractHttpConfigurer::disable)
+        .cors(Customizer.withDefaults())
+
+        .authorizeHttpRequests(auth -> auth
+
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+            .requestMatchers(
+                    "/shortcodes/api/**",
+                    "/public/api/v1/**",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**"
+            ).permitAll()
+
+            .anyRequest().authenticated()
+        )
+
+        .oauth2ResourceServer(oauth2 ->
+                oauth2.jwt(jwt ->
+                        jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
+                )
+        );
+
+    return http.build();
+}
 
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
 
