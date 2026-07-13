@@ -76,12 +76,23 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
 
             var roles = (Collection<String>) realmAccess.get("roles");
 
-            roles.forEach(role ->
-                    authorities.add(new SimpleGrantedAuthority("ROLE_" + role))
-            );
+            roles.forEach(role -> {
+
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+
+                if ("apicaller".equalsIgnoreCase(role)) {
+
+                    authorities.add(new SimpleGrantedAuthority("ROLE_maker"));
+                    authorities.add(new SimpleGrantedAuthority("ROLE_checker"));
+
+                }
+
+            });
+
         }
 
         return authorities;
+
     });
 
     return converter;

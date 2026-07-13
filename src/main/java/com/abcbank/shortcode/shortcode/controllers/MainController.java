@@ -1,5 +1,6 @@
 package com.abcbank.shortcode.shortcode.controllers;
 
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 // import java.util.ArrayList;
 // import java.util.HashMap;
@@ -11,6 +12,7 @@ import jakarta.annotation.security.RolesAllowed;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,12 +35,22 @@ import com.abcbank.shortcode.shortcode.middleware.AuditTrailService;
 import com.abcbank.shortcode.shortcode.middleware.FinacleData;
 import com.abcbank.shortcode.shortcode.middleware.ShortCodeService;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
+import com.abcbank.shortcode.shortcode.services.ExportService;
 // import com.abcbank.shortcode.shortcode.utils.HTTPSClient;
 import com.abcbank.shortcode.shortcode.utils.ShortCodeMapper;
 import com.abcbank.shortcode.shortcode.entities.AuditTrail;
 import com.abcbank.shortcode.shortcode.repo.AuditTrailRepo;
 import com.abcbank.shortcode.shortcode.dto.AuditTrailDto;
 // import java.util.Set;
+
+import java.io.ByteArrayInputStream;
+
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
+import com.abcbank.shortcode.shortcode.services.ExportService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -114,6 +126,9 @@ public class MainController {
 
 	@Autowired
 	private RestTemplate restTemplate;
+
+	@Autowired
+	private ExportService exportService;
 
 
 	@GetMapping("/validate/{accountNumber}")
@@ -218,12 +233,19 @@ public class MainController {
             return response;
         }
 
-        if (shortCodeRepo.existsByShortCode(preferred)) {
+        ShortCode existing = shortCodeRepo.findByShortCode(preferred);
 
-            response.setStatusCode("104");
-            response.setMessage("Selected shortcode is already taken.");
-            return response;
-        }
+			if (existing != null && !existing.isDeleted()) {
+
+    		response.setStatusCode("104");
+    		response.setMessage(
+       		 existing.isApproved()
+           		 ? "Selected shortcode is already allocated."
+           		 : "Selected shortcode has already been requested and is awaiting approval."
+    		);
+
+    return response;
+}
 
     }
 
@@ -652,8 +674,16 @@ public DTOResponse checkShortCode(
         return response;
     }
 
-    // Already exists
-    if (shortCodeRepo.existsByShortCode(shortCode)) {
+    // Check whether the shortcode already exists
+ShortCode existing = shortCodeRepo.findByShortCode(shortCode);
+
+if (existing != null) {
+
+    /*
+     * If the shortcode is already APPROVED and not deleted,
+     * then it is genuinely taken.
+     */
+    if (existing.isApproved() && !existing.isDeleted()) {
 
         response.setStatusCode("101");
         response.setAvailable(false);
@@ -662,10 +692,54 @@ public DTOResponse checkShortCode(
         return response;
     }
 
+    /*
+     * If it is still pending approval,
+     * allow the checker to continue.
+     */
+    if (!existing.isApproved()) {
+
+        response.setStatusCode("000");
+        response.setAvailable(true);
+        response.setMessage("Pending request can be approved.");
+
+        return response;
+    }
+
+    /*
+     * Deleted shortcodes become reusable.
+     */
+    if (existing.isDeleted()) {
+
+        response.setStatusCode("000");
+        response.setAvailable(true);
+        response.setMessage("Previously deleted shortcode.");
+
+        return response;
+    }
+}
+
     response.setStatusCode("000");
     response.setAvailable(true);
     response.setMessage("Shortcode available.");
 
     return response;
+}
+
+@GetMapping("/registry/export/excel")
+public ResponseEntity<InputStreamResource> exportRegistryExcel() {
+
+    ByteArrayInputStream in = exportService.exportRegistryToExcel();
+
+    HttpHeaders headers = new HttpHeaders();
+
+    headers.add(
+            "Content-Disposition",
+            "attachment; filename=Shortcode_Registry.xlsx");
+
+    return ResponseEntity.ok()
+            .headers(headers)
+            .contentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .body(new InputStreamResource(in));
 }
 }

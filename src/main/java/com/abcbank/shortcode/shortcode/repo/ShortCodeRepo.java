@@ -83,4 +83,6 @@ public interface ShortCodeRepo extends CrudRepository<ShortCode, Integer> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
 
+            boolean existsByShortCodeAndDeleted(int shortCode, boolean deleted);
+
 }
