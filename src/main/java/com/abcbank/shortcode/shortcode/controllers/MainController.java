@@ -50,6 +50,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.web.bind.annotation.RequestParam;
+
 import com.abcbank.shortcode.shortcode.services.ExportService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -726,9 +728,13 @@ if (existing != null) {
 }
 
 @GetMapping("/registry/export/excel")
-public ResponseEntity<InputStreamResource> exportRegistryExcel() {
+public ResponseEntity<InputStreamResource> exportRegistryExcel(
 
-    ByteArrayInputStream in = exportService.exportRegistryToExcel();
+        @RequestParam(required = false, defaultValue = "")
+        String status) {
+
+    ByteArrayInputStream in =
+            exportService.exportRegistryToExcel(status);
 
     HttpHeaders headers = new HttpHeaders();
 
@@ -738,7 +744,8 @@ public ResponseEntity<InputStreamResource> exportRegistryExcel() {
 
     return ResponseEntity.ok()
             .headers(headers)
-            .contentType(MediaType.parseMediaType(
+            .contentType(
+                MediaType.parseMediaType(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
             .body(new InputStreamResource(in));
 }

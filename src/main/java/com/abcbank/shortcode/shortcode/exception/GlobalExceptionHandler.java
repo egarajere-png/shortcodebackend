@@ -1,72 +1,108 @@
 package com.abcbank.shortcode.shortcode.exception;
 
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import org.springframework.security.access.AccessDeniedException;
+
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * Global exception handler for REST API error responses.
- * 
- * This class provides centralized exception handling for the entire application.
- * It catches unhandled exceptions and converts them to consistent, user-friendly
- * API error responses.
- * 
- * Exception Handling Strategy:
- * - Logs full exception stack traces for debugging and investigation
- * - Returns generic error message to client (avoids exposing system details)
- * - HTTP status: 500 Internal Server Error
- * - Consistent response format: ApiErrorResponse with status code and message
- * 
- * Extensibility:
- * Can be extended with additional @ExceptionHandler methods to handle
- * specific exception types:
- * - ValidationException → 400 Bad Request
- * - EntityNotFoundException → 404 Not Found
- * - UnauthorizedException → 401 Unauthorized
- * - AccessDeniedException → 403 Forbidden
- * 
- * @author ABC Bank Development Team
- * @version 1.0
- */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * Handles uncaught exceptions and returns a standardized error response.
-     * 
-     * Error Handling:
-     * 1. Logs full exception with stack trace for investigation
-     * 2. Creates generic error response (no sensitive details exposed)
-     * 3. Returns HTTP 500 status with error response body
-     * 4. Prevents exception stack traces from being exposed to clients
-     * 
-     * Security Considerations:
-     * - Generic error messages prevent information disclosure
-     * - Stack traces logged server-side for debugging
-     * - Clients receive friendly but non-technical error messages
-     * - Supports production deployments without exposing internals
-     * 
-     * @param ex the unhandled exception thrown during request processing
-     * @return ResponseEntity with HTTP 500 status and standardized error response
-     */
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadRequest(
+            BadRequestException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ApiErrorResponse("400", ex.getMessage()));
+    }
+
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotFound(
+            ResourceNotFoundException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ApiErrorResponse("404", ex.getMessage()));
+    }
+
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiErrorResponse> handleConflict(
+            ConflictException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ApiErrorResponse("409", ex.getMessage()));
+    }
+
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnauthorized(
+            UnauthorizedException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiErrorResponse("401", ex.getMessage()));
+    }
+
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbidden(
+            ForbiddenException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new ApiErrorResponse("403", ex.getMessage()));
+    }
+
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleSpringForbidden(
+            AccessDeniedException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new ApiErrorResponse(
+                        "403",
+                        "You do not have permission to perform this action."));
+    }
+
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidation(
+            MethodArgumentNotValidException ex) {
+
+        String message =
+                ex.getBindingResult()
+                        .getFieldError()
+                        .getDefaultMessage();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ApiErrorResponse("400", message));
+    }
+
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiErrorResponse> handleGeneralException(Exception ex) {
+    public ResponseEntity<ApiErrorResponse> handleGeneralException(
+            Exception ex) {
 
-        // Log full exception for debugging and investigation
-        log.error("Unhandled exception occurred", ex);
+        log.error("Unhandled exception", ex);
 
-        // Create standardized error response with generic message
-        ApiErrorResponse error = new ApiErrorResponse(
-                "500",
-                "An unexpected error occurred"
-        );
-
-        // Return HTTP 500 error with standardized response body
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(error);
+                .body(new ApiErrorResponse(
+                        "500",
+                        "An unexpected error occurred."));
     }
+
 }

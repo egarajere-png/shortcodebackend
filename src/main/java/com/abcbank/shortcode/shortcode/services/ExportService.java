@@ -4,6 +4,6 @@ import java.io.ByteArrayInputStream;
 
 public interface ExportService {
 
-    ByteArrayInputStream exportRegistryToExcel();
+    ByteArrayInputStream exportRegistryToExcel(String status);
 
 }

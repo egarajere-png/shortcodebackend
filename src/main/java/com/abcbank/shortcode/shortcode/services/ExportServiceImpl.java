@@ -22,9 +22,32 @@ public class ExportServiceImpl implements ExportService {
     private ShortCodeRepo shortCodeRepo;
 
     @Override
-    public ByteArrayInputStream exportRegistryToExcel() {
+    public ByteArrayInputStream exportRegistryToExcel(String status) {
 
         List<ShortCode> registry = shortCodeRepo.findAll();
+
+        if (status != null && !status.isBlank()) {
+
+        registry = registry.stream()
+            .filter(sc -> {
+
+                String currentStatus;
+
+                if (sc.isDeleted()) {
+                    currentStatus = "deleted";
+                } else if (sc.isDeleteInitiated()) {
+                    currentStatus = "pending-deletion";
+                } else if (!sc.isApproved()) {
+                    currentStatus = "pending-approval";
+                } else {
+                    currentStatus = "active";
+                }
+
+                return currentStatus.equalsIgnoreCase(status);
+
+            })
+            .toList();
+}
 
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -78,17 +101,19 @@ public class ExportServiceImpl implements ExportService {
                         sc.getCustId() == null ? "" : sc.getCustId());
 
                 // Status
-                String status;
+                String rowStatus;
 
                 if (sc.isDeleted()) {
-                    status = "Deleted";
+                        rowStatus = "Deleted";
                 } else if (sc.isDeleteInitiated()) {
-                    status = "Pending Deletion";
+                        rowStatus = "Pending Deletion";
                 } else if (!sc.isApproved()) {
-                    status = "Pending Approval";
+                        rowStatus = "Pending Approval";
                 } else {
-                    status = "Active";
+                        rowStatus = "Active";
                 }
+
+                row.createCell(7).setCellValue(rowStatus);
 
                 row.createCell(7).setCellValue(status);
 
