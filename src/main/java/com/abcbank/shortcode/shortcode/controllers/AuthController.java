@@ -22,28 +22,12 @@ import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * REST Controller for authentication and authorization operations.
- * 
- * This controller integrates with Keycloak identity and access management (IAM) server
- * to authenticate users and issue OAuth 2.0 access tokens. It acts as a bridge between
- * client applications and the Keycloak authentication server.
- * 
- * Authorization & Authentication Flow:
- * 1. Client submits username and password to /shortcodes/api/get-token
- * 2. Controller forwards credentials to Keycloak using Resource Owner Password Grant
- * 3. Keycloak validates credentials and returns JWT access token
- * 4. Token includes user roles (maker, checker, apicaller) for role-based access control
- * 5. Client uses token for subsequent API requests (validated via KeycloakConfig)
- * 
- * Security Considerations:
- * - Password Grant should only be used for trusted client applications
- * - Tokens should be transmitted over HTTPS only
- * - Token expiration enforces re-authentication periodically
- * - User roles are validated server-side for all protected endpoints
- * 
- * @author ABC Bank Development Team
- * @version 1.0
+ * Handles user authentication through Keycloak.
+ *
+ * Receives user credentials, requests a JWT access token
+ * from Keycloak, and returns it to the client.
  */
+
 @Slf4j
 @RestController
 
@@ -79,37 +63,11 @@ public class AuthController {
 	ShortCodeService shortCodeService;
 
 	/**
-	 * Authenticates a user with Keycloak and returns an OAuth 2.0 access token.
-	 * 
-	 * Authentication Flow:
-	 * 1. Receives username and password from client
-	 * 2. Constructs OAuth 2.0 Resource Owner Password Grant request
-	 * 3. Sends credentials to Keycloak token endpoint
-	 * 4. Returns JWT token with user roles and permissions
-	 * 
-	 * Token Usage:
-	 * The returned access token contains:
-	 * - User identity and roles (maker, checker, apicaller)
-	 * - Token expiration time (typically 5 minutes)
-	 * - Refresh token for obtaining new access tokens without re-authenticating
-	 * - Client scope and allowed operations
-	 * 
-	 * Error Handling:
-	 * - Invalid credentials return Keycloak error message
-	 * - Connection errors are logged and an empty response is returned
-	 * - Client should check for missing access_token to detect failures
-	 * 
-	 * Role-Based Access Control:
-	 * After receiving the token, users can perform actions according to their roles:
-	 * - Maker: Initiate and delete short code requests
-	 * - Checker: Approve and delete approved short codes
-	 * - API Caller: Call APIs for integration with other systems
-	 * 
-	 * @param authPayload contains the username and password for authentication
-	 * @return DTOAuthPayloadResponse with access_token and expires_in, or empty response on error
-	 * 
-	 * @throws RestClientException if communication with Keycloak server fails
-	 */
+ * Authenticates a user and returns a JWT access token.
+ *
+ * @param authPayload login credentials
+ * @return authentication response
+ */
 	@PostMapping("/shortcodes/api/get-token")
     public DTOAuthPayloadResponse authenticateUser(@RequestBody DTOAuthPayload authPayload) {
         

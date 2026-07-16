@@ -7,6 +7,10 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+/**
+ * Configures OpenAPI documentation
+ * and JWT Bearer authentication.
+ */
 
 @Configuration
 public class OpenAPI30Configuration {

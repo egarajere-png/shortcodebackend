@@ -57,6 +57,14 @@ import com.abcbank.shortcode.shortcode.services.ExportService;
 import lombok.extern.slf4j.Slf4j;
 
 
+
+/**
+ * Main REST controller for shortcode management.
+ *
+ * Handles the complete shortcode lifecycle including
+ * initiation, approval, deletion, validation,
+ * lookup, registry, and reporting.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/shortcodes/api")
@@ -133,6 +141,10 @@ public class MainController {
 	private ExportService exportService;
 
 
+    /**
+ * Validates an account using Finacle data.
+ */
+
 	@GetMapping("/validate/{accountNumber}")
 	@RolesAllowed({"apicaller","maker","checker"})
 	public DTOAccount validate(@PathVariable String accountNumber) {
@@ -165,7 +177,11 @@ public class MainController {
     return account;
 }
 
-	
+	/**
+ * Initiates a new shortcode request after
+ * validating business rules.
+ */
+
 	@PostMapping("/initiate")
 	@RolesAllowed({ "apicaller", "maker" })
 	@ResponseBody
@@ -292,7 +308,13 @@ public class MainController {
 
     return response;
 }
-	
+	/**
+ * Approves a pending shortcode request,
+ * generates customer documents, and records
+ * the audit trail.
+ */
+
+
 	@PostMapping("/approve")
 	@RolesAllowed({ "apicaller", "checker" })
 	@ResponseBody
@@ -347,6 +369,9 @@ public class MainController {
 		return response;
 	}
 
+    /**
+ * Initiates shortcode deletion pending approval.
+ */
 	
 	@DeleteMapping("/delete")
 	@RolesAllowed({ "apicaller", "maker" })
@@ -394,6 +419,11 @@ public class MainController {
 	}
 
 	
+    /**
+ * Completes the shortcode deletion process.
+ */
+
+
 	@PostMapping("/approve-delete")
 	// @RolesAllowed({ "apicaller", "checker" })
 	@ResponseBody
@@ -418,6 +448,7 @@ public class MainController {
 		// Finalize the deletion: clear pending flag and mark as deleted
 		shortCode.setDeleteInitiated(false);
 		shortCode.setDeleted(true);
+        shortCode.setDateDeleted(LocalDateTime.now());
 		response.setMessage("Short code has been deleted from the system");
 
 		// Verify record exists (ID > 0)
@@ -550,6 +581,10 @@ public ShortCode getAccountDetails(@PathVariable int shortCode) {
     }
 }
 
+/**
+ * Returns the audit history of a shortcode.
+ */
+
 	@GetMapping("/audit/{shortCode}")
 	// @RolesAllowed({"checker","apicaller"})
 	@ResponseBody
@@ -599,6 +634,10 @@ public ShortCode getAccountDetails(@PathVariable int shortCode) {
     return "";
 	}
 
+    /**
+ * Returns all shortcode records.
+ */
+
 	@GetMapping("/registry")
 	// @RolesAllowed({"checker","apicaller"})
 	@ResponseBody
@@ -647,6 +686,12 @@ public ShortCode getAccountDetails(@PathVariable int shortCode) {
             })
             .toList();
 }
+
+
+/**
+ * Checks whether a shortcode is available
+ * for allocation.
+ */
 
 @GetMapping("/check-shortcode/{shortCode}")
 // @RolesAllowed({"maker","apicaller"})
@@ -730,11 +775,22 @@ if (existing != null) {
 @GetMapping("/registry/export/excel")
 public ResponseEntity<InputStreamResource> exportRegistryExcel(
 
-        @RequestParam(required = false, defaultValue = "")
-        String status) {
+        @RequestParam(defaultValue = "")
+        String status,
+
+        @RequestParam(required = false)
+        String startDate,
+
+        @RequestParam(required = false)
+        String endDate
+) {
 
     ByteArrayInputStream in =
-            exportService.exportRegistryToExcel(status);
+            exportService.exportRegistryToExcel(
+                    status,
+                    startDate,
+                    endDate
+            );
 
     HttpHeaders headers = new HttpHeaders();
 
@@ -745,8 +801,8 @@ public ResponseEntity<InputStreamResource> exportRegistryExcel(
     return ResponseEntity.ok()
             .headers(headers)
             .contentType(
-                MediaType.parseMediaType(
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
             .body(new InputStreamResource(in));
 }
 }

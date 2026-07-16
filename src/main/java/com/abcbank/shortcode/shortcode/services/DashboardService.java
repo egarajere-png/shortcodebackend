@@ -17,11 +17,17 @@ import java.util.ArrayList;
 
 import org.springframework.data.domain.PageRequest;
 
-
-
 import com.abcbank.shortcode.shortcode.dto.RecentActivityDto;
 import com.abcbank.shortcode.shortcode.dto.WeeklySummaryDto;
 import com.abcbank.shortcode.shortcode.entities.AuditTrail;
+
+
+/**
+ * Service providing dashboard analytics and reporting.
+ *
+ * Aggregates shortcode statistics, recent activities,
+ * and weekly request summaries displayed on the dashboard.
+ */
 
 @Service
 public class DashboardService {
@@ -31,6 +37,13 @@ public class DashboardService {
 
     @Autowired
     private AuditTrailRepo auditTrailRepo;
+
+    /**
+ * Retrieves overall shortcode statistics.
+ *
+ * @return dashboard analytics including totals,
+ * active, pending, deleted and approval rate.
+ */
 
     public DashboardAnalyticsDto getAnalytics() {
 
@@ -61,6 +74,11 @@ public class DashboardService {
                 .build();
     }
 
+    /**
+ * Retrieves the ten most recent audit trail activities.
+ *
+ * @return list of recent activities.
+ */
     public List<RecentActivityDto> getRecentActivity() {
 
     List<AuditTrail> activities =
@@ -78,6 +96,13 @@ public class DashboardService {
             .collect(Collectors.toList());
 
 }
+
+/**
+ * Retrieves the number of shortcode requests
+ * initiated each day of the current week.
+ *
+ * @return weekly request summary.
+ */
 
     public List<WeeklySummaryDto> getWeeklySummary() {
 

@@ -15,14 +15,28 @@ import org.springframework.stereotype.Service;
 import com.abcbank.shortcode.shortcode.entities.ShortCode;
 import com.abcbank.shortcode.shortcode.repo.ShortCodeRepo;
 
+/**
+ * Default implementation of the export service.
+ *
+ * Generates Excel reports for the shortcode registry.
+ */
+
+
+
 @Service
 public class ExportServiceImpl implements ExportService {
 
     @Autowired
     private ShortCodeRepo shortCodeRepo;
 
+    /**
+ * Generates an Excel report containing shortcode registry records.
+ *
+ * Supports filtering by status and date range.
+ */
+
     @Override
-    public ByteArrayInputStream exportRegistryToExcel(String status) {
+    public ByteArrayInputStream exportRegistryToExcel(String status,String startDate,String endDate) {
 
         List<ShortCode> registry = shortCodeRepo.findAll();
 

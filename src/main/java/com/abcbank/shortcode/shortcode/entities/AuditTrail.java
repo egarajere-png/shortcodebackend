@@ -9,26 +9,13 @@ import jakarta.persistence.Id;
 import lombok.Data;
 
 /**
- * JPA Entity representing an audit trail record for short code operations.
- * 
- * This entity implements comprehensive audit logging for regulatory compliance and
- * investigation purposes. Every significant action on a short code is logged with
- * full context including the actor, action type, timestamp, and remarks.
- * 
- * Audit Trail Actions Tracked:
- * - INITIATE: Short code request created by Maker
- * - APPROVE: Short code approved by Checker (with final hash validation)
- * - DELETE_REQUEST: Deletion initiated by Maker
- * - DELETE_APPROVE: Deletion approved by Checker
- * 
- * Regulatory Compliance:
- * - Non-repudiation: Records prove who performed which action and when
- * - Immutability: Audit records are append-only and not modified
- * - Traceability: All changes to short code records are fully documented
- * 
- * @author ABC Bank Development Team
- * @version 1.0
+ * Entity representing an audit trail record.
+ *
+ * Stores all significant actions performed on a shortcode, including
+ * the action type, user, remarks, and timestamp for traceability
+ * and compliance.
  */
+
 @Data
 @Entity
 public class AuditTrail {

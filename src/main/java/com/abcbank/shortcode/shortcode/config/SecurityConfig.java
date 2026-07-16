@@ -27,6 +27,11 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 
 import org.springframework.http.HttpMethod;
 
+
+/**
+ * Configures application security,
+ * JWT authentication, and role-based access.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(jsr250Enabled = true)

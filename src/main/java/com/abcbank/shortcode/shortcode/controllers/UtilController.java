@@ -88,29 +88,9 @@ public class UtilController {
 	}
 
 	/**
-	 * Downloads the PDF slip for a given short code.
-	 * 
-	 * File Download Endpoint:
-	 * Allows customers and internal staff to download the PDF slip containing
-	 * short code details. The slip includes the short code value, account number,
-	 * customer name, and instructions for use in Mpesa transactions.
-	 * 
-	 * HTTP Response Headers:
-	 * - Content-Disposition: attachment to trigger browser download
-	 * - Cache-Control: no-cache, no-store to prevent caching
-	 * - Content-Type: application/octet-stream for binary PDF file
-	 * 
-	 * File Handling:
-	 * - Generates slip if file doesn't exist (lazy generation)
-	 * - Returns pre-generated file if it exists (cached)
-	 * - File stored in /tmp/ directory with naming: {shortCode}.pdf
-	 * 
-	 * @param shortCode the numeric short code value
-	 * @return ResponseEntity with PDF file as attachment, ready for download
-	 *         Returns null on error (should return proper error response)
-	 * 
-	 * @throws IOException if file operations fail
-	 */
+ * Provides utility operations such as
+ * PDF slip generation and download.
+ */
 	@GetMapping("/print/{shortCode}")
 	public ResponseEntity<Resource> downloadSlip(@PathVariable int shortCode) throws IOException {
 		try {
@@ -146,34 +126,10 @@ public class UtilController {
 	}
 
 	/**
-	 * Generates or retrieves a cached PDF slip for a short code.
-	 * 
-	 * Slip Generation Logic:
-	 * This method manages the PDF slip for a short code, which contains:
-	 * - Short code numeric value
-	 * - Account number
-	 * - Customer name
-	 * - Instructions for use in Mpesa paybill transactions
-	 * 
-	 * Caching Strategy:
-	 * - Check if slip PDF already exists in /tmp/ directory
-	 * - If exists: Return cached file path (avoid regeneration)
-	 * - If not exists: Query database for short code details, generate new PDF
-	 * 
-	 * Workflow Integration:
-	 * - Invoked during approval phase to generate customer receipt
-	 * - File is attached to approval notification email
-	 * - Generated once and cached for future downloads
-	 * 
-	 * File Storage:
-	 * - Location: /tmp/ directory (temporary storage)
-	 * - Filename: {shortCode}.pdf (e.g., 350001.pdf)
-	 * - Persistence: Remains until manually deleted or system cleanup
-	 * 
-	 * @param shortCode the numeric short code value
-	 * @return the absolute file path to the generated or cached PDF slip,
-	 *         null if generation fails
-	 */
+ * Downloads the PDF slip for a shortcode.
+ */
+
+	
 	public String generateSlip(int shortCode) {
 		try {
 			// Build filename from short code value

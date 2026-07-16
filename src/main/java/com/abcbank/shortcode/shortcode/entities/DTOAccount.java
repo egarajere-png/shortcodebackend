@@ -3,24 +3,10 @@ package com.abcbank.shortcode.shortcode.entities;
 import lombok.Data;
 
 /**
- * Data Transfer Object for account information from Finacle core banking system.
- * 
- * This DTO represents account details retrieved from the Finacle query endpoint
- * or mock Finacle controller. It's returned by the account validation endpoint
- * and used by the UI for customer verification during short code creation.
- * 
- * Usage:
- * - /validate/{accountNumber} endpoint: Returns account data for verification
- * - Contains customer identification and contact information
- * - Used by frontend to display customer details before short code creation
- * 
- * Data Source:
- * - Finacle core banking system (production)
- * - Mock Finacle controller (development/testing)
- * 
- * @author ABC Bank Development Team
- * @version 1.0
+ * DTO representing customer account information retrieved
+ * from the core banking system during account validation.
  */
+
 @Data
 public class DTOAccount {
 

@@ -9,6 +9,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+/**
+ * Configures Cross-Origin Resource Sharing (sharing it with a partner) (CORS)
+ * for client applications.
+ */
 @Configuration
 public class CorsConfig {
 
