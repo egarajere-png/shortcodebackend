@@ -27,6 +27,12 @@ public class Emailer {
 	
 	@Value("${service.params.smtphost}")
 	private String smtpHost;
+
+	private final MailSender mailSender;
+
+    public Emailer(MailSender mailSender) {
+        this.mailSender = mailSender;
+    }
 	
 	public boolean send(String from, String to, String subject, String body) {
 		Properties properties = System.getProperties();
@@ -45,7 +51,7 @@ public class Emailer {
 			message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
 			message.setSubject(subject);
 			message.setText(body, "utf-8", "html");
-			Transport.send(message);
+			mailSender.send(message);
 			System.out.println("message sent successfully...");
 			return true;
 		} catch (MessagingException mex) {
@@ -75,7 +81,7 @@ public class Emailer {
 			message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
 			message.setSubject(subject);
 			message.setText(body, "utf-8", "html");
-			Transport.send(message);
+			mailSender.send(message);
 			System.out.println("message sent successfully...");
 			return true;
 		} catch (MessagingException mex) {
@@ -119,7 +125,7 @@ public class Emailer {
 	        }
             message.setContent(multipart);
             
-			Transport.send(message);
+			mailSender.send(message);
 			
 			log.info("Message successfully sent");
 			return true;
@@ -174,7 +180,7 @@ public class Emailer {
 	        }
             message.setContent(multipart);
             
-			Transport.send(message);
+			mailSender.send(message);
 			
 			log.info("Message successfully sent");
 			return true;

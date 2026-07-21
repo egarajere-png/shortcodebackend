@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.abcbank.shortcode.shortcode.dto.ShortCodeDto;
 import com.abcbank.shortcode.shortcode.entities.DTOAccount;
 import com.abcbank.shortcode.shortcode.entities.DTOApproval;
 import com.abcbank.shortcode.shortcode.entities.DTOResponse;
@@ -679,4 +680,181 @@ void shouldApproveDeleteSuccessfully() throws Exception {
 }
 
 
+/**
+ * ----------------------------------------------------------
+ * shouldreturnpendingrequests()
+ * Should return pending Requests.
+ * ----------------------------------------------------------
+ */
+@Test
+void shouldReturnPendingRequests() {
+
+    ShortCode sc = new ShortCode();
+
+    sc.setAccountNumber("123456789");
+
+    ShortCodeDto dto = new ShortCodeDto();
+    dto.setAccountNumber("123456789");
+
+    when(shortCodeRepo.findByApproved(false))
+            .thenReturn(List.of(sc));
+    when(shortCodeMapper.toDto(sc))
+            .thenReturn(dto);
+
+    List<ShortCodeDto> result = controller.getPending();
+
+    assertEquals(1, result.size());
+    assertEquals("123456789", result.get(0).getAccountNumber());
+
+    verify(shortCodeRepo).findByApproved(false);
+}
+
+/**
+ * ----------------------------------------------------------
+ * shouldReturnApprovedRequests()
+ * Should return approved Requests.
+ * ----------------------------------------------------------
+ */
+
+@Test
+void shouldReturnApprovedRequests() {
+
+    ShortCode sc = new ShortCode();
+
+    sc.setApproved(true);
+
+    ShortCodeDto dto = new ShortCodeDto();
+    dto.setApproved(true);
+
+    when(shortCodeRepo.findByApproved(true))
+            .thenReturn(List.of(sc));
+
+    when(shortCodeMapper.toDto(sc))
+            .thenReturn(dto);
+
+    List<ShortCodeDto> result = controller.getApproved();
+
+    assertEquals(1, result.size());
+    assertTrue(result.get(0).isApproved());
+
+    verify(shortCodeRepo).findByApproved(true);
+}
+
+
+/**
+ * ----------------------------------------------------------
+ * shouldReturnPendingDeleteRequests()
+ * Should return pending delete Requests.
+ * ----------------------------------------------------------
+ */
+@Test
+void shouldReturnPendingDeleteRequests() {
+
+    ShortCode sc = new ShortCode();
+
+    sc.setDeleteInitiated(true);
+
+    ShortCodeDto dto = new ShortCodeDto();
+    dto.setDeleteInitiated(true);
+
+    when(shortCodeRepo.findByDeleteInitiatedAndDeleted(true, false))
+            .thenReturn(List.of(sc));
+
+    when(shortCodeMapper.toDto(sc))
+            .thenReturn(dto);
+
+    List<ShortCodeDto> result =
+            controller.getPendingDelete();
+
+    assertEquals(1, result.size());
+
+    assertTrue(result.get(0).isDeleteInitiated());
+
+    verify(shortCodeRepo)
+            .findByDeleteInitiatedAndDeleted(true, false);
+}
+
+
+/**
+ * ----------------------------------------------------------
+ * shouldReturnShortcodesForAccount()
+ * Should return Shortcodes for a specific account.
+ * ----------------------------------------------------------
+ */
+@Test
+void shouldReturnShortcodesForAccount() {
+
+    ShortCode sc = new ShortCode();
+
+    sc.setAccountNumber("123456789");
+
+    ShortCodeDto dto = new ShortCodeDto();
+    dto.setAccountNumber("123456789");
+
+    when(shortCodeRepo.findByAccountNumberOrderByIdDesc("123456789"))
+            .thenReturn(List.of(sc));
+
+    when(shortCodeMapper.toDto(sc))
+            .thenReturn(dto);
+
+    List<ShortCodeDto> result =
+            controller.getPending("123456789");
+
+    assertEquals(1, result.size());
+
+    assertEquals(
+            "123456789",
+            result.get(0).getAccountNumber());
+}
+
+
+/**
+ * ----------------------------------------------------------
+ * shouldReturnAccountNumberWhenHashMatches()
+ * Should return the account number when the hash matches.
+ * ----------------------------------------------------------
+ */
+@Test
+void shouldReturnAccountNumberWhenHashMatches() {
+
+    ShortCode sc = new ShortCode();
+
+    sc.setAccountNumber("123456789");
+    sc.setHash("hash");
+    sc.setDeleted(false);
+
+    when(shortCodeRepo.findByShortCode(350001))
+            .thenReturn(sc);
+
+    when(shortCodeService.generateHash(sc))
+            .thenReturn("hash");
+
+    String account =
+            controller.getAccount(350001);
+
+    assertEquals("123456789", account);
+}
+
+
+/**
+ * ----------------------------------------------------------
+ * shouldReturnNullWhenHashFails()
+ * Should return null when the hash fails to match.
+ * ----------------------------------------------------------
+ */
+@Test
+void shouldReturnNullWhenHashFails() {
+
+    ShortCode sc = new ShortCode();
+
+    sc.setHash("stored");
+
+    when(shortCodeRepo.findByShortCode(350001))
+            .thenReturn(sc);
+
+    when(shortCodeService.generateHash(sc))
+            .thenReturn("generated");
+
+    assertNull(controller.getAccount(350001));
+}
 }
